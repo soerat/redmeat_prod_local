@@ -1,0 +1,113 @@
+@charset "utf-8";
+/* CSS Document */
+@media only screen and (min-width : 150px) and (max-width : 815px) {
+.dropdown {
+	display: none;
+}
+.mobile-dropdown {
+	display: block;
+}
+.search{
+	display:none;
+}
+.search-mobile {
+	display: block;
+}
+.search-mobile input[type="text"] {
+	text-indent: 1px;
+	padding: 0 4%;
+	width: 92%;
+	height: 30px;
+	background: #C2F4EA;
+	color: #0880FF;
+	line-height: 20px;
+	font-weight: bold;
+	border: none;
+	outline: none;
+	float: left;
+}
+.search-mobile input[type="submit"] {
+	width: 30px;
+	height: 30px;
+	background: url(../img/search-icon.png) 5px 5px no-repeat #fff;
+	border: none;
+	outline: none;
+	float: left;
+	margin-left: 5px;
+	cursor: pointer;
+}
+.list-info{
+	font-size:10px;
+}
+.list-info a{
+	padding:6px;
+}
+.wrap-title {
+	width: 80%;
+	margin: 2% 10%;
+}
+.container-inside{
+	width:90%;
+}
+.header{
+	background: url(images/header.png) no-repeat right;
+	background-size:cover;
+}
+.container-berita{
+	width:100%;
+	margin-left:0;
+}
+.block{
+	margin: 0 0 10px;
+	width: 90%;
+	padding: 5%;
+}
+.left-big {
+	width: 96%;
+}
+.image-big{
+	display:none;
+}
+.content-sekunder {
+	width: 94%;
+	margin: 3%;
+}
+.sidebar{
+	width:100%;
+}
+.sidebar li{
+	margin:2%;
+}
+.footer-inside{
+	width:90%;
+}
+.breadcrumbs{
+	margin:0;
+	margin-top:10px;
+}
+.single-content {
+	width: 96%;
+	margin: 0;
+	padding: 2%;
+	margin-bottom:20px;
+}
+.footblock{
+	width:90%;
+}
+.regular-text{
+	width:90% !important;
+}
+.helptext{
+	width:90% !important;
+}
+.form-table textarea{
+	min-width:90% !important;
+	max-width:90% !important;
+}
+#pdb-amount_of_money select#amount_of_money_select{
+	width:90% !important;
+}
+.note{
+	width:90%;
+}
+}

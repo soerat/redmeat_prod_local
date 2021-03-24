@@ -1,0 +1,26 @@
+@charset "utf-8";
+/* CSS Document */
+
+html {
+	margin:0;
+	padding:0;
+	display: block; 
+	unicode-bidi: embed;
+	border:none;
+	background-image:url(images/bg-main.gif);
+}
+
+h1 a {
+	background:url(images/ub-logo.png) 0 0 no-repeat;
+	width:320px;
+	height:90px;
+}
+
+.login p#backtoblog {
+	font-weight:bold;
+}
+
+.login p#backtoblog a:hover, 
+.login p#backtoblog a:active {
+	text-decoration:underline;
+}

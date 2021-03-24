@@ -1,0 +1,12 @@
+@charset "utf-8";
+
+/* CSS Document */
+@media only screen and (min-width : 816px) and (max-width : 1130px) {
+.dropdown{
+	display:none;
+}
+.mobile-dropdown{
+	display:block;
+}
+
+}
