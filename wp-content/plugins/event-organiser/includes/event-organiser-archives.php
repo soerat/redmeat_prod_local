@@ -46,22 +46,24 @@ add_filter('query_vars', 'eventorganiser_register_query_vars' );
 function eventorganiser_pre_get_posts( $query ) {
 
 	//Deprecated, use event-venue instead.
-	if( !empty($query->query_vars['venue']) ){
-		$venue = $query->get('venue');
-		$query->set('event-venue',$venue);
+	if ( $query->get( 'venue' ) ) {
+		$venue = $query->get( 'venue' );
+		$query->set( 'event-venue',$venue );
 		$query->set( 'post_type', 'event' );
 	}
 
 	//If the query is for eo-events feed, set post type
-	if( $query->is_feed( 'eo-events' ) ){
+	if ( $query->is_feed( 'eo-events' ) ) {
 		$query->set( 'post_type', 'event' );
-	}   
-	
-	//If querying for all events starting on given date, set the date parameters
-	if( !empty($query->query_vars['ondate']) ) {
+		$query->is_comment_feed = false;
+	}
 
-		$ondate_start = str_replace('/','-',$query->query_vars['ondate']);
-		$ondate_end = str_replace('/','-',$query->query_vars['ondate']);
+	//If querying for all events starting on given date, set the date parameters
+	if ( $query->get( 'ondate' ) ) {
+
+		//Normalise date delimiter
+		$ondate_start = str_replace( '/', '-', $query->get( 'ondate' ) );
+		$ondate_end = str_replace( '/', '-', $query->get( 'ondate' ) );
 
 		$parts = count(explode('-',$ondate_start));
 		if( $parts == 1 && is_numeric($ondate_start) ){
@@ -76,10 +78,9 @@ function eventorganiser_pre_get_posts( $query ) {
 				$ondate_end = $end->format('Y-m-t');
 			}catch( Exception $e){
 				$query->set('ondate',false);
-				break;
 			}
 		}
-	
+
 		$query->set( 'post_type', 'event' );
 		$query->set( 'event_start_before', $ondate_end );
 		$query->set( 'event_end_after', $ondate_start );
@@ -89,28 +90,40 @@ function eventorganiser_pre_get_posts( $query ) {
 	if( ! eventorganiser_is_event_query( $query, true ) )
 		return $query;
 
+
+	//@see https://github.com/stephenharris/Event-Organiser/issues/30
+	if( $query->is_main_query() ){
+		if( eo_is_event_archive( 'day' ) || eo_is_event_archive( 'month' ) || eo_is_event_archive( 'year' ) ){
+			$query->set( 'showpastevents', true );
+		}
+	}
+
 	$blog_now = new DateTime(null, eo_get_blog_timezone());
 
 	//Determine whether or not to show past events and each occurrence. //If not set, use options
+	//@see https://core.trac.wordpress.org/ticket/16471
 	if( !is_admin() && !is_single() && !$query->is_feed('eo-events') && !isset($query->query_vars['showpastevents']) ){
 		//If showpastevents is not set - use options (except for admin / single pages.
 		$query->set('showpastevents', eventorganiser_get_option('showpast') );
 	}
 
 	//Deprecated: showrepeats - use group_events_by instead
+	//@see https://core.trac.wordpress.org/ticket/16471
 	if( isset($query->query_vars['showrepeats']) && !isset($query->query_vars['group_events_by']) ){
 		if( !$query->query_vars['showrepeats'] )
 			$query->set('group_events_by','series');
 	}
 
 	//Determine how to group events: by series or show each occurrence
+	//@see https://core.trac.wordpress.org/ticket/16471
 	if( !isset($query->query_vars['group_events_by']) ){
 
 		//Group by isn't set - default depends on context:
 		if( $query->is_main_query() &&  (is_admin() || is_single() || $query->is_feed('eo-events') ) ){
 
 			//If in admin or single page - we probably don't want to see duplicates of (recurrent) events - unless specified otherwise.
-			$query->set('group_events_by','series');
+			//but neither do we care which date component is selected.
+			$query->set('group_events_by','series_indeterminate');
 
 		}elseif( eventorganiser_get_option('group_events') == 'series' ){
 			//In other instances (archives, shortcode listing) if showrepeats option is false display only the next event.
@@ -124,19 +137,20 @@ function eventorganiser_pre_get_posts( $query ) {
 	$date_objs = array('event_start_after'=>'','event_start_before'=>'','event_end_after'=>'','event_end_before'=>'');
 	foreach($date_objs as $prop => $value):
 		$date = $query->get($prop);
-		try{
-			$date = ( empty($date) ? false : new DateTime($date, eo_get_blog_timezone()) );
-		}catch( Exception $e){
-			$date = false;
+		if ( !( $date instanceof DateTime ) ){
+			try{
+				$date = ( empty($date) ? false : new DateTime($date, eo_get_blog_timezone()) );
+			}catch( Exception $e){
+				$date = false;
+			}
 		}
 		$date_objs[$prop] = $date;
 		$query->set($prop, $date);
-		
 	endforeach;
 
 	//If eo_interval is set, determine date ranges
-	if( !empty($query->query_vars['eo_interval']) ){
-		switch($query->get('eo_interval')):
+	if ( $query->get( 'eo_interval' ) ) {
+		switch ( $query->get( 'eo_interval' ) ) :
 			case 'expired':
 				$meta_query = (array) $query->get('meta_query');
 				$meta_query[] =array(
@@ -164,11 +178,11 @@ function eventorganiser_pre_get_posts( $query ) {
 			case 'P6M':
 			case 'P1Y':
 				//I hate you php5.2
-				$intervals = array('P1D'=>'+1 day', 'P1W'=>'+1 week','P1M'=>'+1 month','P6M'=>'+6 month','P1Y'=>'+1 Year');
+				$intervals = array( 'P1D' => '+1 day', 'P1W' => '+1 week', 'P1M' => '+1 month', 'P6M' => '+6 month', 'P1Y' => '+1 Year' );
 				$cutoff = clone $blog_now;
-				$cutoff->modify($intervals[$query->query_vars['eo_interval']]);
+				$cutoff->modify( $intervals[ $query->get( 'eo_interval' ) ] );
 
-				if( is_admin() && 'series' == $query->get('group_events_by') ){
+				if( is_admin() && 'series_indeterminate' == $query->get('group_events_by') ){
 					//On admin we want to show the **first** occurrence of a recurring event which has an occurrence in the interval
 					global $wpdb;
 					$post_ids = $wpdb->get_results($wpdb->prepare(
@@ -194,6 +208,7 @@ function eventorganiser_pre_get_posts( $query ) {
 	$running_event_is_past= (  eventorganiser_get_option('runningisnotpast') ? true : false);
 
 	//Set date range according to whether we show past events
+	//@see https://core.trac.wordpress.org/ticket/16471
 	if(isset($query->query_vars['showpastevents'])&& !$query->query_vars['showpastevents'] ){
 		//Showing only future events
 
@@ -213,7 +228,7 @@ function eventorganiser_pre_get_posts( $query ) {
 	}
 
 	if( $query->is_feed('eo-events') ){
-		//Posts per page for feeds bug http://core.trac.wordpress.org/ticket/17853
+		//Posts per page for feeds bug https://core.trac.wordpress.org/ticket/17853
 		add_filter('post_limits','wp17853_eventorganiser_workaround');
 		$query->set('posts_per_page',-1);
 	}
@@ -232,7 +247,7 @@ add_action( 'pre_get_posts', '__return_false', 10 );
 
 
 /**
- * A work around for a bug that posts_per_page is over-ridden by the posts_per_rss option. http://core.trac.wordpress.org/ticket/17853
+ * A work around for a bug that posts_per_page is over-ridden by the posts_per_rss option. https://core.trac.wordpress.org/ticket/17853
 
  * posts_per_rss option overirdes posts_per_page  and nopaging is also set to 'false'.
  * For ics feeds nopaging should be true and post_per_page should be -1. We intercept the LIMIT part of the query and remove it.
@@ -264,9 +279,9 @@ function wp17853_eventorganiser_workaround( $limit ){
  */
 function eventorganiser_event_fields( $select, $query ){
 	global $wpdb;
-	
+
 	$q_fields = $query->get( 'fields' );
-	
+
 	if( eventorganiser_is_event_query( $query, true ) && 'ids' != $q_fields && 'id=>parent' != $q_fields ){
 		$et =$wpdb->eo_events;
 		$select .= ", {$et}.event_id, {$et}.event_id AS occurrence_id, {$et}.StartDate, {$et}.StartTime, {$et}.EndDate, {$et}.FinishTime, {$et}.event_occurrence ";
@@ -276,62 +291,152 @@ function eventorganiser_event_fields( $select, $query ){
 
 
 /**
-* GROUP BY Event (occurrence) ID
-* Event posts do not want to be grouped by post, but by occurrence - unless otherwise specified.
- * Hooked onto posts_groupby
+ * GROUP BY Event (occurrence) ID
+ * Event posts do not want to be grouped by post, but by occurrence. When grouping
+ * by series we do not use GROUP BY because we cannot be sure of the record that
+ * is selected for the group.
  *
- *@since 1.0.0
- *@access private
- *@ignore
- *@param string $groupby GROUP BY part of the SQL statement
- *@param string $query WP_Query
- *@return string
+ * @since 1.0.0
+ * @access private
+ * @ignore
+ * @param string $groupby GROUP BY part of the SQL statement
+ * @param string $query WP_Query
+ * @return string
  */
-function eventorganiser_event_groupby( $groupby, $query ){
+function eventorganiser_event_groupby( $groupby, $query ) {
 	global $wpdb;
 
-	if(!empty($query->query_vars['group_events_by']) && $query->query_vars['group_events_by'] == 'series'){
-		return "{$wpdb->posts}.ID";
-	}
+	if ( eventorganiser_is_event_query( $query, true ) ) {
 
-	if( eventorganiser_is_event_query( $query, true ) ):
-		if(empty($groupby))
+		if ( 'series_indeterminate' == $query->get( 'group_events_by' ) ) {
+			return "{$wpdb->eo_events}.post_id";
+		}
+
+		if ( empty( $groupby ) ) {
 			return $groupby;
+		}
 
 		return "{$wpdb->eo_events}.event_id";
-	endif;
+	}
 
 	return $groupby;
 }
 
 
 /**
-* LEFT JOIN all EVENTS.
-* Joins events table when querying for events
+ * LEFT JOIN all EVENTS.
+ * Joins events table when querying for events
  * Hooked onto posts_join
  *
- *@since 1.0.0
- *@access private
- *@ignore
- *@param string $join JOIN part of the SQL statement
- *@param string $query WP_Query
- *@return string
+ * @since 1.0.0
+ * @access private
+ * @ignore
+ * @param string $join JOIN part of the SQL statement
+ * @param string $query WP_Query
+ * @return string
  */
-function eventorganiser_join_tables( $join, $query ){
+function eventorganiser_join_tables( $join, $query ) {
 	global $wpdb;
 
-	if( eventorganiser_is_event_query( $query, true ) ){
-		if( 'series'== $query->get('group_events_by') ) {
-			$join .= " LEFT JOIN 
-						( SELECT * FROM {$wpdb->eo_events} ORDER BY {$wpdb->eo_events}.StartDate ASC, {$wpdb->eo_events}.StartTime ASC ) 
-						AS {$wpdb->eo_events} ON $wpdb->posts.id = {$wpdb->eo_events}.post_id ";
+	if ( eventorganiser_is_event_query( $query, true ) ) {
 
-		}else{
-			$join .=" LEFT JOIN $wpdb->eo_events ON $wpdb->posts.id = {$wpdb->eo_events}.post_id ";
+		$join .= " LEFT JOIN $wpdb->eo_events ON $wpdb->posts.ID = {$wpdb->eo_events}.post_id ";
+
+		if ( 'series' == $query->get( 'group_events_by' ) ) {
+
+			//This could potentially be a big select - use 'series_indeterminate' if
+			//you don't care how the occurrence is selected - it's a lot cheaper.
+			//@link https://github.com/stephenharris/Event-Organiser/issues/432
+			$wpdb->query("SET SQL_BIG_SELECTS=1;");
+
+			//@link https://github.com/stephenharris/Event-Organiser/issues/430
+			$where = _eventorganiser_generate_mysql_where( $query );
+			$where  = $where ? "WHERE {$where}" : '';
+			$join .= " LEFT JOIN
+				(SELECT post_id, StartDate, StartTime FROM {$wpdb->eo_events} $where) AS {$wpdb->eo_events}2
+				ON {$wpdb->eo_events}.post_id = {$wpdb->eo_events}2.post_id
+				AND TIMESTAMP({$wpdb->eo_events}.StartDate,{$wpdb->eo_events}.StartTime)
+				> TIMESTAMP({$wpdb->eo_events}2.StartDate,{$wpdb->eo_events}2.StartTime)";
 		}
 	}
 	return $join;
 }
+
+/**
+ *
+ * @access private
+ */
+function _eventorganiser_generate_mysql_where( $query ) {
+
+	global $wpdb;
+
+	$where = array();
+
+	//If we only want events (or occurrences of events) that belong to a particular 'event'
+	//https://core.trac.wordpress.org/ticket/16471
+	if ( isset( $query->query_vars['event_series'] ) ) :
+		$series_id = $query->query_vars['event_series'];
+		$where[]   = $wpdb->prepare( "{$wpdb->eo_events}.post_id =%d ", $series_id );
+	endif;
+
+	//https://core.trac.wordpress.org/ticket/16471
+	if ( isset( $query->query_vars['event_occurrence_id'] ) ) :
+		$occurrence_id = $query->query_vars['event_occurrence_id'];
+		$where[]       = $wpdb->prepare( "{$wpdb->eo_events}.event_id=%d ", $occurrence_id );
+	endif;
+
+	//https://core.trac.wordpress.org/ticket/16471
+	if ( isset( $query->query_vars['event_occurrence__not_in'] ) ) :
+		$occurrence__not_in = implode( ', ', array_map( 'intval', $query->query_vars['event_occurrence__not_in'] ) );
+		$where[]            = "{$wpdb->eo_events}.event_id NOT IN({$occurrence__not_in}) ";
+	endif;
+
+	//https://core.trac.wordpress.org/ticket/16471
+	if ( isset( $query->query_vars['event_occurrence__in'] ) ) :
+		$occurrence__in = implode( ', ', array_map( 'intval', $query->query_vars['event_occurrence__in'] ) );
+		$where[]        = "{$wpdb->eo_events}.event_id IN({$occurrence__in}) ";
+	endif;
+
+	//Check date ranges were are interested in.
+	$date_queries = array(
+		'event_start_after'  => array(
+			'notstrict' => "{$wpdb->eo_events}.StartDate >= %s ",
+			'strict'    => "({$wpdb->eo_events}.StartDate > %s OR ({$wpdb->eo_events}.StartDate = %s AND {$wpdb->eo_events}.StartTime > %s)) ",
+		),
+		'event_start_before' => array(
+			'notstrict' => "{$wpdb->eo_events}.StartDate <= %s ",
+			'strict'    => "({$wpdb->eo_events}.StartDate < %s OR ({$wpdb->eo_events}.StartDate = %s AND {$wpdb->eo_events}.StartTime < %s)) ",
+		),
+		'event_end_after'    => array(
+			'notstrict' => "{$wpdb->eo_events}.EndDate >= %s ",
+			'strict'    => "({$wpdb->eo_events}.EndDate > %s OR ({$wpdb->eo_events}.EndDate = %s AND {$wpdb->eo_events}.FinishTime > %s)) ",
+		),
+		'event_end_before'   => array(
+			'notstrict' => "{$wpdb->eo_events}.EndDate <= %s ",
+			'strict'    => "({$wpdb->eo_events}.EndDate < %s OR ({$wpdb->eo_events}.EndDate = %s AND {$wpdb->eo_events}.FinishTime < %s)) ",
+		),
+	);
+
+	//Construct sql query.
+	foreach ( $date_queries as $prop => $_sql ) {
+		$datetime = $query->get( $prop );
+		if ( ! empty( $datetime ) ) {
+			$date = eo_format_date( $datetime, 'Y-m-d' );
+			$time = eo_format_date( $datetime, 'H:i:s' );
+			if ( '00:00:00' == $time ) {
+				$sql     = $_sql['notstrict'];
+				$where[] = $wpdb->prepare( $sql, $date );
+			} else {
+				$sql     = $_sql['strict'];
+				$where[] = $wpdb->prepare( $sql, $date, $date, $time );
+			}
+		}
+	}
+
+	$where = array_filter( $where );
+	return implode( ' AND ', $where );
+}
+
 
 /**
  * Checks whether a given query is for events
@@ -341,35 +446,32 @@ function eventorganiser_join_tables( $join, $query ){
  * @return bool True if the query is an event query. False otherwise.
  */
 function eventorganiser_is_event_query( $query, $exclusive = false ){
-		
+
 	$post_types = $query->get( 'post_type' );
 
-	if( 'any' == $post_types )
+	if( 'any' == $post_types ){
 		$post_types = get_post_types( array('exclude_from_search' => false) );
-	
-	if( $post_types == 'event' || array('event') == $post_types ){
+	}
+
+	if( 'event' == $post_types || array( 'event' ) == $post_types ){
 		$bool = true;
-	
-	}elseif( ( $query && $query->is_feed('eo-events') ) || is_feed( 'eo-events' ) ){
+
+	}elseif( $query && $query->is_feed( 'eo-events' ) ){
 		$bool = true;
-		
+
 	}elseif( empty( $post_types ) && eo_is_event_taxonomy( $query ) ){
-		
+
 		//Querying by taxonomy - check if 'event' is the only post type
 		$post_types = array();
 		$taxonomies = wp_list_pluck( $query->tax_query->queries, 'taxonomy' );
-		
+
 		foreach ( get_post_types() as $pt ) {
-			
-			if( version_compare( '3.4', get_bloginfo( 'version' ) ) <= 0 ){
-				$object_taxonomies = $pt === 'attachment' ? get_taxonomies_for_attachments() : get_object_taxonomies( $pt );
-			}else{
-				//Backwards compat for 3.3
-				$object_taxonomies = $pt === 'attachment' ? array() : get_object_taxonomies( $pt );
-			}
-			
-			if ( array_intersect( $taxonomies, $object_taxonomies ) )
+
+			$object_taxonomies = ( $pt === 'attachment' ? get_taxonomies_for_attachments() : get_object_taxonomies( $pt ) );
+
+			if ( array_intersect( $taxonomies, $object_taxonomies ) ) {
 				$post_types[] = $pt;
+			}
 		}
 
 		if( in_array( 'event', $post_types ) ){
@@ -384,19 +486,30 @@ function eventorganiser_is_event_query( $query, $exclusive = false ){
 		}else{
 			$bool = false;
 		}
-
 	}elseif( $exclusive ){
 		$bool = false;
-		
+
 	}elseif( ( is_array( $post_types ) && in_array( 'event', $post_types ) ) ){
-		
+
 		$bool = true;
-		
+
 	}else{
 		$bool = false;
-		
+
 	}
 
+	/**
+	 * Filters whether the query is an event query.
+	 *
+	 * This should be `true` if the query is for events, `false` otherwise. The
+	 * third parameter, `$exclusive` qualifies if this means 'query exclusively
+	 * for events' or not. If `true` then this filter should return `true` only
+	 * if the query is exclusively for events.
+	 *
+	 * @param bool     $bool      Whether the query is an event query.
+	 * @param WP_Query $query     The WP_Query instance to check.
+	 * @param bool     $exclusive Whether the check if for queries exclusively for events.
+	 */
 	return apply_filters( 'eventorganiser_is_event_query', $bool, $query, $exclusive );
 }
 
@@ -405,71 +518,23 @@ function eventorganiser_is_event_query( $query, $exclusive = false ){
  * Selects posts which satisfy custom WHERE statements
  * Hooked onto posts_where
  *
- *@since 1.0.0
- *@access private
- *@ignore
- *@param string $where WHERE part of the SQL statement
- *@param string $query WP_Query
- *@return string
+ * @since 1.0.0
+ * @access private
+ * @ignore
+ * @param string $where WHERE part of the SQL statement
+ * @param string $query WP_Query
+ * @return string
  */
-function eventorganiser_events_where( $where, $query ){
+function eventorganiser_events_where( $where, $query ) {
 	global $wpdb;
 
-	//Only alter event queries
-	if( eventorganiser_is_event_query( $query, true ) ):
-
-		//If we only want events (or occurrences of events) that belong to a particular 'event'
-		if(isset($query->query_vars['event_series'])):
-			$series_id =$query->query_vars['event_series'];
-			$where .= $wpdb->prepare(" AND {$wpdb->eo_events}.post_id =%d ",$series_id);
-		endif;
-
-		if(isset($query->query_vars['event_occurrence_id'])):
-			$occurrence_id =$query->query_vars['event_occurrence_id'];
-			$where .= $wpdb->prepare(" AND {$wpdb->eo_events}.event_id=%d ",$occurrence_id);
-		endif;
-		
-		if(isset($query->query_vars['event_occurrence__in'])):
-			$occurrence__in = implode(', ', array_map( 'intval', $query->query_vars['event_occurrence__in'] ) );
-			$where .= " AND {$wpdb->eo_events}.event_id IN({$occurrence__in}) ";
-		endif;
-
-		//Check date ranges were are interested in. 
-		$date_queries = array(
-			'event_start_after'=>array(
-				'notstrict' =>" AND {$wpdb->eo_events}.StartDate >= %s ",
-				'strict' => " AND ({$wpdb->eo_events}.StartDate > %s OR ({$wpdb->eo_events}.StartDate = %s AND {$wpdb->eo_events}.StartTime > %s)) "
-			),
-			'event_start_before'=>array(
-				'notstrict' =>" AND {$wpdb->eo_events}.StartDate <= %s ",
-				'strict' => " AND ({$wpdb->eo_events}.StartDate < %s OR ({$wpdb->eo_events}.StartDate = %s AND {$wpdb->eo_events}.StartTime < %s)) "
-			),
-			'event_end_after'=>array(
-				'notstrict' =>" AND {$wpdb->eo_events}.EndDate >= %s ",
-				'strict' => " AND ({$wpdb->eo_events}.EndDate > %s OR ({$wpdb->eo_events}.EndDate = %s AND {$wpdb->eo_events}.FinishTime > %s)) "
-			),
-			'event_end_before'=>array(
-				'notstrict' =>" AND {$wpdb->eo_events}.EndDate <= %s ",
-				'strict' => " AND ({$wpdb->eo_events}.EndDate < %s OR ({$wpdb->eo_events}.EndDate = %s AND {$wpdb->eo_events}.FinishTime < %s)) "
-			)
-		);
-
-		//Construct sql query.
-		foreach ( $date_queries as $prop => $_sql ){
-			$datetime = $query->get($prop);
-			if( !empty( $datetime) ) {
-				$date = eo_format_date($datetime,'Y-m-d');
-				$time = eo_format_date($datetime,'H:i:s');
-				if( $time == '00:00:00' ){
-					$sql = $_sql['notstrict'];
-					$where .= $wpdb->prepare($sql, $date);				
-				}else{
-					$sql = $_sql['strict'];
-					$where .= $wpdb->prepare($sql, $date, $date, $time);				
-				}
-			}
-		}
-	endif;
+	$_where = _eventorganiser_generate_mysql_where( $query );
+	if ( $_where ) {
+		$where .= " AND {$_where}";
+	}
+	if('series' == $query->get( 'group_events_by' )){
+		$where .= " AND {$wpdb->eo_events}2.StartDate is NULL";
+	}
 
 	return $where;
 }
@@ -486,16 +551,15 @@ function eventorganiser_events_where( $where, $query ){
  *@param string $query WP_Query
  *@return string
  */
-function eventorganiser_sort_events( $orderby, $query ){
+function eventorganiser_sort_events( $orderby, $query ) {
 	global $wpdb;
 
-	if( !empty($query->query_vars['orderby']) ){
+	if ( $query->get( 'orderby' ) ) {
 		//If the query sets an orderby return what to do if it is one of our custom orderbys
+		$order_crit = $query->get( 'orderby' );
+		$order_dir  = $query->get( 'order' );
 
-		$order_crit= $query->query_vars['orderby'];
-		$order_dir = $query->query_vars['order'];
-
-		switch($order_crit):
+		switch ( $order_crit ) :
 			case 'eventstart':
 				return  " {$wpdb->eo_events}.StartDate $order_dir, {$wpdb->eo_events}.StartTime $order_dir";
 				break;
@@ -508,7 +572,7 @@ function eventorganiser_sort_events( $orderby, $query ){
 				return $orderby;
 		endswitch;
 
-	}elseif( eventorganiser_is_event_query( $query, true ) ){
+	} elseif ( eventorganiser_is_event_query( $query, true ) ) {
 			//If no orderby is set, but we are querying events, return the default order for events;
 			$orderby = " {$wpdb->eo_events}.StartDate ASC, {$wpdb->eo_events}.StartTime ASC";
 	}
@@ -527,6 +591,52 @@ function eventorganiser_sort_events( $orderby, $query ){
  */
 function eo_is_venue(){
 	global $wp_query;
+	//@see https://core.trac.wordpress.org/ticket/16471
 	return (isset($wp_query->query_vars['venue'] ) || is_tax('event-venue'));
 }
+
+
+function _eventorganiser_update_event_dates_cache( $events, $query ){
+
+	// No point in doing all this work if we didn't match any posts.
+	if ( ! $events ) {
+		return $events;
+	}
+
+	//PHP 5.3 and early can't cache datetime objects
+	if ( version_compare( PHP_VERSION, '5.3.0' ) < 0 ) {
+		return $events;
+	}
+
+	//TODO do we need to check if $events is an array of WP_Post objects?
+	//TODO allow this to be skipped?
+
+	if ( ! eventorganiser_is_event_query( $query ) ) {
+		return $events;
+	}
+
+	$tz = eo_get_blog_timezone();
+
+	foreach ( $events as $event ) {
+
+		$id = $event->ID;
+		$cached_event = wp_cache_get( 'eventorganiser_occurrences_'.$id );
+
+		if ( isset( $cached_event[$event->occurrence_id] ) ) {
+			continue;
+		}
+
+		$cached_event[$event->occurrence_id] = 	array(
+			'start' => new DateTime($event->StartDate.' '.$event->StartTime, $tz ),
+			'end'   => new DateTime($event->EndDate.' '.$event->FinishTime, $tz ),
+		);
+
+		wp_cache_set( 'eventorganiser_occurrences_'.$id, $cached_event );
+
+	}
+
+	return $events;
+}
+
+add_filter( 'the_posts', '_eventorganiser_update_event_dates_cache', 10, 2 );
 ?>

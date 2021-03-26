@@ -1,135 +1,186 @@
-BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//<?php  get_bloginfo('name'); ?>//NONSGML Events //EN
-CALSCALE:GREGORIAN
-X-WR-CALNAME:<?php echo get_bloginfo('name');?> - Events
-X-ORIGINAL-URL:<?php echo get_post_type_archive_link('event') . "\n"; ?>
-X-WR-CALDESC:<?php echo get_bloginfo('name');?> - Events
 <?php
-	// Loop through events
-	if ( have_posts() ):
-		$now = new DateTime();
-		$dtstamp =$now->format('Ymd\THis\Z');
-		$UTC_tz = new DateTimeZone('UTC');
 
-		while( have_posts() ): the_post();
-			global $post;
+echo "BEGIN:VCALENDAR\r\n";
+echo "VERSION:2.0\r\n";
+echo 'PRODID:-//' . get_bloginfo( 'name' ) . "//NONSGML Events//EN\r\n";
+echo "CALSCALE:GREGORIAN\r\n";
+if( !is_single() ){
+	echo 'X-WR-CALNAME:' . get_bloginfo( 'name' ) . " - Events\r\n";
+}
+echo 'X-ORIGINAL-URL:' . get_post_type_archive_link( 'event' ) . "\r\n";
+echo 'X-WR-CALDESC:' . get_bloginfo( 'name' ) . " - Events\r\n";
 
-			//If event has no corresponding row in events table then skip it
-			if(!isset($post->event_id) || $post->event_id==-1)
-				continue;
+// Loop through events
+if ( have_posts() ) :
 
-			$start = eo_get_the_start(DATETIMEOBJ);
-			$end = eo_get_the_end(DATETIMEOBJ);
-			$created_date = get_post_time('Ymd\THis\Z',true);
-			$modified_date = get_post_modified_time('Ymd\THis\Z',true);
-			$schedule_data = eo_get_event_schedule();
+	$now     = new DateTime();
+	$dtstamp = eo_format_date( 'now', 'Ymd\THis\Z' );
 
-			//Set up start and end date times
-			if( eo_is_all_day() ){
-				$format =	'Ymd';
-				$start_date = $start->format($format);
-				$end->modify('+1 minute');
-				$end_date = $end->format($format);				
-			}else{
-				$format =	'Ymd\THis\Z';
-				$start->setTimezone($UTC_tz);
-				$start_date =$start->format($format);
-				$end->setTimezone($UTC_tz);
-				$end_date = $end->format($format);
-			}
+	//Set $tz if a timezone is specified - this does not include GMT offsets
+	$timezone     = ( get_option( 'timezone_string' ) ? eo_get_blog_timezone() : false );
+	$utc_timezone = new DateTimeZone( 'UTC' );
 
-			//Generate Event status
-			if( get_post_status(get_the_ID()) == 'publish' )
-				$status = 'CONFIRMED';
-			else
-				$status = 'TENTATIVE';
+	$earliest_date = false;
+	$latest_date   = false;
 
-			//Output event
-?>
-BEGIN:VEVENT
-UID:<?php echo eo_get_event_uid();?>
+	while ( have_posts() ) : the_post();
 
-STATUS:<?php echo $status;?>
+		global $post;
 
-DTSTAMP:<?php echo $dtstamp;?>
-
-CREATED:<?php echo $created_date;?>
-
-LAST-MODIFIED:<?php echo $modified_date;?>
-
-<?php if( eo_is_all_day() ): ?>
-DTSTART;VALUE=DATE:<?php echo $start_date ; ?>
-
-DTEND;VALUE=DATE:<?php echo $end_date; ?>
-<?php else: ?>
-DTSTART:<?php echo $start_date ; ?>
-
-DTEND:<?php echo $end_date; ?>
-<?php endif;?>
-
-<?php if ( $reoccurrence_rule = eventorganiser_generate_ics_rrule() ):?>
-RRULE:<?php echo $reoccurrence_rule;?>
-
-<?php endif;?>
-<?php if( !empty($schedule_data['exclude']) ):
-	$exclude_strings = array();
-	foreach ( $schedule_data['exclude'] as $exclude ){
-		if( !eo_is_all_day() ){
-			$vdate='';
-			$exclude->setTimezone($UTC_tz);
-			$exclude_strings[] = $exclude->format('Ymd\THis\Z');
-		}else{
-			$vdate=';VALUE=DATE';
-			$exclude_strings[] = $exclude->format('Ymd');
+		// If event has no corresponding row in events table then skip it
+		if ( ! isset( $post->event_id ) || -1 == $post->event_id ) {
+			continue;
 		}
-	}?>
-EXDATE<?php echo $vdate;?>:<?php echo implode(',',$exclude_strings);?>
 
-<?php endif;?>
-<?php if( !empty($schedule_data['include']) ):
-	$include_strings = array();
-		foreach ( $schedule_data['include'] as $include ){
-			if( !eo_is_all_day() ){
-				$vdate='';
-				$include->setTimezone($UTC_tz);
-				$include_strings[] = $include->format('Ymd\THis\Z');
-			}else{
-				$vdate=';VALUE=DATE';
-				$include_strings[] = $include->format('Ymd');
+		$schedule_data = eo_get_event_schedule();
+		$start = $schedule_data['start'];
+		$end = $schedule_data['end'];
+		$created_date  = get_post_time( 'Ymd\THis\Z',true );
+		$modified_date = get_post_modified_time( 'Ymd\THis\Z',true );
+
+		if ( $timezone ) {
+			$earliest_date = $earliest_date ? min( eo_get_schedule_start( DATETIMEOBJ ), $earliest_date ) : eo_get_schedule_start( DATETIMEOBJ );
+			$latest_date   = $latest_date ? max( eo_get_schedule_last( DATETIMEOBJ ), $latest_date ) : eo_get_schedule_last( DATETIMEOBJ );
+		}
+
+		// Generate Event status
+		if ( get_post_status( get_the_ID() ) == 'publish' ) {
+			$status = 'CONFIRMED';
+		} else {
+			$status = 'TENTATIVE';
+		}
+
+		// Output event
+		echo "BEGIN:VEVENT\r\n";
+		echo 'UID:' . eo_get_event_uid() . "\r\n";
+		echo 'STATUS:' . $status . "\r\n";
+		echo 'DTSTAMP:' . $dtstamp . "\r\n";
+		echo 'CREATED:' . $created_date . "\r\n";
+		echo 'LAST-MODIFIED:' . $modified_date . "\r\n";
+
+		if ( eo_is_all_day() ) {
+			//All day event
+			$end->modify( '+1 minute' );
+			echo 'DTSTART;VALUE=DATE:' . $start->format( 'Ymd' ) . "\r\n";
+			echo 'DTEND;VALUE=DATE:' . $end->format( 'Ymd' ) . "\r\n";
+		} elseif ( $timezone ) {
+			//Non-all-day event with timezone
+			echo 'DTSTART;TZID=' . eo_get_blog_timezone()->getName() . ':' . $start->format( 'Ymd\THis' ) . "\r\n";
+			echo 'DTEND;TZID=' . eo_get_blog_timezone()->getName() . ':' . $end->format( 'Ymd\THis' ) . "\r\n";
+		} else {
+			//Non-all-day event without timezone or with GMT offset
+			$start->setTimezone( $utc_timezone );
+			$end->setTimezone( $utc_timezone );
+			echo 'DTSTART:' . $start->format( 'Ymd\THis\Z' ) . "\r\n";
+			echo 'DTEND:' . $end->format( 'Ymd\THis\Z' ) . "\r\n";
+		}
+
+		if ( $recurrence_rule = eventorganiser_generate_ics_rrule() ) :
+			echo 'RRULE:' . $recurrence_rule . "\r\n";
+		endif;
+
+		if ( ! empty( $schedule_data['exclude'] ) ) :
+			$exclude_strings = array();
+			foreach ( $schedule_data['exclude'] as $exclude ) {
+				if ( eo_is_all_day() ) {
+					$param = ';VALUE=DATE';
+					$exclude_strings[] = $exclude->format( 'Ymd' );
+				} elseif ( $timezone ) {
+					$param = ';TZID=' . eo_get_blog_timezone()->getName();
+					$exclude_strings[] = $exclude->format( 'Ymd\THis' );
+				} else {
+					$param = '';
+					$exclude->setTimezone( $utc_timezone );
+					$exclude_strings[] = $exclude->format( 'Ymd\THis\Z' );
+				}
 			}
-	}?>
-RDATE<?php echo $vdate;?>:<?php echo implode(',',$include_strings);?>
+			echo 'EXDATE' . $param . ':' . implode( ',',$exclude_strings ) . "\r\n";
+		endif;
 
-<?php endif; ?>
-<?php echo eventorganiser_escape_ical_text( html_entity_decode( "SUMMARY: " . get_the_title_rss() ) ) . "\n" ;?>
-<?php
-	$excerpt = get_the_excerpt();
-	$excerpt = apply_filters('the_excerpt_rss', $excerpt);
-	if( !empty($excerpt) ):
-		echo eventorganiser_escape_ical_text( html_entity_decode( "DESCRIPTION: $excerpt" ) ) . "\n";
-	endif; ?>
-<?php 
-	$cats = get_the_terms( get_the_ID(), 'event-category' );
-if( $cats && !is_wp_error($cats) ):
-	$cat_names = wp_list_pluck($cats, 'name');
-	$cat_names = array_map( 'eventorganiser_escape_ical_text', $cat_names ); ?>
-CATEGORIES:<?php echo implode(',',$cat_names); ?>
+		if ( ! empty( $schedule_data['include'] ) ) :
+			$include_strings = array();
+			foreach ( $schedule_data['include'] as $include ) {
+				if ( eo_is_all_day() ) {
+					$param = ';VALUE=DATE';
+					$include_strings[] = $include->format( 'Ymd' );
+				} elseif ( $timezone ) {
+					$param = ';TZID=' . eo_get_blog_timezone()->getName();
+					$include_strings[] = $include->format( 'Ymd\THis' );
+				} else {
+					$param = '';
+					$include->setTimezone( $utc_timezone );
+					$include_strings[] = $include->format( 'Ymd\THis\Z' );
+				}
+			}
+			echo 'RDATE' . $param . ':' . implode( ',',$include_strings ) . "\r\n";
+		endif;
 
-<?php endif; ?>
-<?php
-if( eo_get_venue() ): 
-	$venue = eo_get_venue_name( eo_get_venue() );
-?>
-LOCATION: <?php echo eventorganiser_escape_ical_text( $venue );?>
+		$event_title = html_entity_decode( get_the_title_rss(), ENT_COMPAT, 'UTF-8' );
+		$event_title = apply_filters( 'eventorganiser_ical_summary', $event_title );
+		echo eventorganiser_fold_ical_text(
+			'SUMMARY: ' . eventorganiser_escape_ical_text( $event_title )
+		) . "\r\n";
 
-<?php endif; ?>
-ORGANIZER: <?php echo eventorganiser_escape_ical_text( get_the_author() );?>
+		$description = wp_strip_all_tags( html_entity_decode( get_the_excerpt(), ENT_COMPAT, 'UTF-8' ) );
+		/**
+		 * Filters the description of the event as it appears in the iCal feed.
+		 *
+		 * @param string $description The event description
+		 */
+		$description = apply_filters( 'eventorganiser_ical_description', $description );
+		$description = eventorganiser_escape_ical_text( $description );
 
-END:VEVENT
-<?php
-		endwhile;
+		if ( ! empty( $description ) ) :
+			echo eventorganiser_fold_ical_text( "DESCRIPTION: $description" ) . "\r\n";
+		endif;
 
-	endif;
-?>
-END:VCALENDAR
+		$description = wpautop( html_entity_decode( get_the_content(), ENT_COMPAT, 'UTF-8' ) );
+		$description = str_replace( "\r\n", '', $description ); //Remove new lines
+		$description = str_replace( "\n", '', $description );
+		$description = eventorganiser_escape_ical_text( $description );
+		echo eventorganiser_fold_ical_text( "X-ALT-DESC;FMTTYPE=text/html: $description" ) . "\r\n";
+
+		$cats = get_the_terms( get_the_ID(), 'event-category' );
+		if ( $cats && ! is_wp_error( $cats ) ) :
+			$cat_names = wp_list_pluck( $cats, 'name' );
+			$cat_names = array_map( 'eventorganiser_escape_ical_text', $cat_names );
+			echo 'CATEGORIES:' . implode( ',', $cat_names ) . "\r\n";
+		endif;
+
+		if ( eo_get_venue() ) :
+			$venue = eo_get_venue_name( eo_get_venue() );
+			$venue = apply_filters( 'eventorganiser_ical_location', $venue );
+			if ($venue) {
+				echo 'LOCATION:' . eventorganiser_fold_ical_text( eventorganiser_escape_ical_text( $venue ) ) . "\r\n";
+				echo 'GEO:' . implode( ';', eo_get_venue_latlng( eo_get_venue() ) ) . "\r\n";
+			}
+		endif;
+
+		if ( get_the_author_meta( 'ID' ) ) {
+			$author_name  = eventorganiser_escape_ical_text( get_the_author() );
+			//@see https://github.com/stephenharris/Event-Organiser/issues/362
+			$author_name  = str_replace( '"', '', $author_name );
+			$author_email = eventorganiser_escape_ical_text( get_the_author_meta( 'user_email' ) );
+			echo eventorganiser_fold_ical_text( 'ORGANIZER;CN="' . $author_name . '":MAILTO:' . $author_email ) . "\r\n";
+		}
+
+		echo eventorganiser_fold_ical_text( 'URL;VALUE=URI:' . get_permalink() ) . "\r\n";
+
+		if ( has_post_thumbnail( get_the_ID() ) ) {
+			$thumbnail_id        = get_post_thumbnail_id( get_the_ID() );
+			$thumbnail_url       = wp_get_attachment_url( $thumbnail_id );
+			$thumbnail_mime_type = get_post_mime_type( $thumbnail_id );
+			printf( "ATTACH;FMTTYPE=%s:%s\r\n", $thumbnail_mime_type, $thumbnail_url );
+		}
+
+		echo "END:VEVENT\r\n";
+
+	endwhile;
+
+	if ( $timezone ) {
+		echo eventorganiser_ical_vtimezone( $timezone, $earliest_date->format( 'U' ), $latest_date->format( 'U' ) ) . "\r\n";
+	}
+
+endif;
+
+echo "END:VCALENDAR\r\n";

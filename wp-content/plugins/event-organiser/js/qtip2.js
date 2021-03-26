@@ -1,2 +1,2132 @@
-/*! qTip2 v2.0.0 | http://craigsworks.com/projects/qtip2/ | Licensed MIT, GPL */
-(function(a){"use strict",typeof define=="function"&&define.amd?define(["jquery"],a):jQuery&&!jQuery.fn.qtip&&a(jQuery)})(function(a){function G(){G.history=G.history||[],G.history.push(arguments);if("object"==typeof console){var a=console[console.warn?"warn":"log"],b=Array.prototype.slice.call(arguments),c;typeof arguments[0]=="string"&&(b[0]="qTip2: "+b[0]),c=a.apply?a.apply(console,b):a(b)}}function H(b){var e=function(a){return a===d||"object"!=typeof a},f=function(b){return!a.isFunction(b)&&(!b&&!b.attr||b.length<1||"object"==typeof b&&!b.jquery)};if(!b||"object"!=typeof b)return c;e(b.metadata)&&(b.metadata={type:b.metadata});if("content"in b){if(e(b.content)||b.content.jquery)b.content={text:b.content};f(b.content.text||c)&&(b.content.text=c),"title"in b.content&&(e(b.content.title)&&(b.content.title={text:b.content.title}),f(b.content.title.text||c)&&(b.content.title.text=c))}return"position"in b&&e(b.position)&&(b.position={my:b.position,at:b.position}),"show"in b&&e(b.show)&&(b.show=b.show.jquery?{target:b.show}:{event:b.show}),"hide"in b&&e(b.hide)&&(b.hide=b.hide.jquery?{target:b.hide}:{event:b.hide}),"style"in b&&e(b.style)&&(b.style={classes:b.style}),a.each(r,function(){this.sanitize&&this.sanitize(b)}),b}function I(e,f,n,o){function N(a){var b=0,c,d=f,e=a.split(".");while(d=d[e[b++]])b<e.length&&(c=d);return[c||f,e.pop()]}function O(){var a=f.style.widget;J.toggleClass(v,a).toggleClass(y,f.style.def&&!a),L.content.toggleClass(v+"-content",a),L.titlebar&&L.titlebar.toggleClass(v+"-header",a),L.button&&L.button.toggleClass(u+"-icon",!a)}function P(a){L.title&&(L.titlebar.remove(),L.titlebar=L.title=L.button=d,a!==c&&p.reposition())}function Q(){var b=f.content.title.button,d=typeof b=="string",e=d?b:"Close tooltip";L.button&&L.button.remove(),b.jquery?L.button=b:L.button=a("<a />",{"class":"ui-state-default ui-tooltip-close "+(f.style.widget?"":u+"-icon"),title:e,"aria-label":e}).prepend(a("<span />",{"class":"ui-icon ui-icon-close",html:"&times;"})),L.button.appendTo(L.titlebar).attr("role","button").click(function(a){return J.hasClass(w)||p.hide(a),c}),p.redraw()}function R(){var c=D+"-title";L.titlebar&&P(),L.titlebar=a("<div />",{"class":u+"-titlebar "+(f.style.widget?"ui-widget-header":"")}).append(L.title=a("<div />",{id:c,"class":u+"-title","aria-atomic":b})).insertBefore(L.content).delegate(".ui-tooltip-close","mousedown keydown mouseup keyup mouseout",function(b){a(this).toggleClass("ui-state-active ui-state-focus",b.type.substr(-4)==="down")}).delegate(".ui-tooltip-close","mouseover mouseout",function(b){a(this).toggleClass("ui-state-hover",b.type==="mouseover")}),f.content.title.button?Q():p.rendered&&p.redraw()}function S(a){var b=L.button,d=L.title;if(!p.rendered)return c;a?(d||R(),Q()):b.remove()}function T(b,d){var f=L.title;if(!p.rendered||!b)return c;a.isFunction(b)&&(b=b.call(e,M.event,p));if(b===c||!b&&b!=="")return P(c);b.jquery&&b.length>0?f.empty().append(b.css({display:"block"})):f.html(b),p.redraw(),d!==c&&p.rendered&&J[0].offsetWidth>0&&p.reposition(M.event)}function U(b,d){function g(b){function h(e){e&&(delete g[e.src],clearTimeout(p.timers.img[e.src]),a(e).unbind(K)),a.isEmptyObject(g)&&(p.redraw(),d!==c&&p.reposition(M.event),b())}var e,g={};if((e=f.find("img[src]:not([height]):not([width])")).length===0)return h();e.each(function(b,c){if(g[c.src]!==undefined)return;var d=0,e=3;(function f(){if(c.height||c.width||d>e)return h(c);d+=1,p.timers.img[c.src]=setTimeout(f,700)})(),a(c).bind("error"+K+" load"+K,function(){h(this)}),g[c.src]=c})}var f=L.content;return!p.rendered||!b?c:(a.isFunction(b)&&(b=b.call(e,M.event,p)||""),b.jquery&&b.length>0?f.empty().append(b.css({display:"block"})):f.html(b),p.rendered<0?J.queue("fx",g):(I=0,g(a.noop)),p)}function V(){function j(a){if(J.hasClass(w))return c;clearTimeout(p.timers.show),clearTimeout(p.timers.hide);var d=function(){p.toggle(b,a)};f.show.delay>0?p.timers.show=setTimeout(d,f.show.delay):d()}function k(b){if(J.hasClass(w)||G||I)return c;var e=a(b.relatedTarget||b.target),h=e.closest(x)[0]===J[0],i=e[0]===g.show[0];clearTimeout(p.timers.show),clearTimeout(p.timers.hide);if(d.target==="mouse"&&h||f.hide.fixed&&/mouse(out|leave|move)/.test(b.type)&&(h||i)){try{b.preventDefault(),b.stopImmediatePropagation()}catch(j){}return}f.hide.delay>0?p.timers.hide=setTimeout(function(){p.hide(b)},f.hide.delay):p.hide(b)}function l(a){if(J.hasClass(w))return c;clearTimeout(p.timers.inactive),p.timers.inactive=setTimeout(function(){p.hide(a)},f.hide.inactive)}function m(a){p.rendered&&J[0].offsetWidth>0&&p.reposition(a)}var d=f.position,g={show:f.show.target,hide:f.hide.target,viewport:a(d.viewport),document:a(document),body:a(document.body),window:a(window)},h={show:a.trim(""+f.show.event).split(" "),hide:a.trim(""+f.hide.event).split(" ")},i=a.browser.msie&&parseInt(a.browser.version,10)===6;J.bind("mouseenter"+K+" mouseleave"+K,function(a){var b=a.type==="mouseenter";b&&p.focus(a),J.toggleClass(A,b)}),/mouse(out|leave)/i.test(f.hide.event)&&f.hide.leave==="window"&&g.window.bind("mouseout"+K+" blur"+K,function(a){!/select|option/.test(a.target.nodeName)&&!a.relatedTarget&&p.hide(a)}),f.hide.fixed?(g.hide=g.hide.add(J),J.bind("mouseover"+K,function(){J.hasClass(w)||clearTimeout(p.timers.hide)})):/mouse(over|enter)/i.test(f.show.event)&&g.hide.bind("mouseleave"+K,function(a){clearTimeout(p.timers.show)}),(""+f.hide.event).indexOf("unfocus")>-1&&d.container.closest("html").bind("mousedown"+K,function(b){var c=a(b.target),d=p.rendered&&!J.hasClass(w)&&J[0].offsetWidth>0,f=c.parents(x).filter(J[0]).length>0;c[0]!==e[0]&&c[0]!==J[0]&&!f&&!e.has(c[0]).length&&!c.attr("disabled")&&p.hide(b)}),"number"==typeof f.hide.inactive&&(g.show.bind("qtip-"+n+"-inactive",l),a.each(q.inactiveEvents,function(a,b){g.hide.add(L.tooltip).bind(b+K+"-inactive",l)})),a.each(h.hide,function(b,c){var d=a.inArray(c,h.show),e=a(g.hide);d>-1&&e.add(g.show).length===e.length||c==="unfocus"?(g.show.bind(c+K,function(a){J[0].offsetWidth>0?k(a):j(a)}),delete h.show[d]):g.hide.bind(c+K,k)}),a.each(h.show,function(a,b){g.show.bind(b+K,j)}),"number"==typeof f.hide.distance&&g.show.add(J).bind("mousemove"+K,function(a){var b=M.origin||{},c=f.hide.distance,d=Math.abs;(d(a.pageX-b.pageX)>=c||d(a.pageY-b.pageY)>=c)&&p.hide(a)}),d.target==="mouse"&&(g.show.bind("mousemove"+K,function(a){s={pageX:a.pageX,pageY:a.pageY,type:"mousemove"}}),d.adjust.mouse&&(f.hide.event&&(J.bind("mouseleave"+K,function(a){(a.relatedTarget||a.target)!==g.show[0]&&p.hide(a)}),L.target.bind("mouseenter"+K+" mouseleave"+K,function(a){M.onTarget=a.type==="mouseenter"})),g.document.bind("mousemove"+K,function(a){p.rendered&&M.onTarget&&!J.hasClass(w)&&J[0].offsetWidth>0&&p.reposition(a||s)}))),(d.adjust.resize||g.viewport.length)&&(a.event.special.resize?g.viewport:g.window).bind("resize"+K,m),(g.viewport.length||i&&J.css("position")==="fixed")&&g.viewport.bind("scroll"+K,m)}function W(){var b=[f.show.target[0],f.hide.target[0],p.rendered&&L.tooltip[0],f.position.container[0],f.position.viewport[0],f.position.container.closest("html")[0],window,document];p.rendered?a([]).pushStack(a.grep(b,function(a){return typeof a=="object"})).unbind(K):f.show.target.unbind(K+"-create")}var p=this,C=document.body,D=u+"-"+n,G=0,I=0,J=a(),K=".qtip-"+n,L,M;p.id=n,p.rendered=c,p.destroyed=c,p.elements=L={target:e},p.timers={img:{}},p.options=f,p.checks={},p.plugins={},p.cache=M={event:{},target:a(),disabled:c,attr:o,onTarget:c,lastClass:""},p.checks.builtin={"^id$":function(d,e,f){var g=f===b?q.nextid:f,h=u+"-"+g;g!==c&&g.length>0&&!a("#"+h).length&&(J[0].id=h,L.content[0].id=h+"-content",L.title[0].id=h+"-title")},"^content.text$":function(a,b,c){U(c)},"^content.title.text$":function(a,b,c){if(!c)return P();!L.title&&c&&R(),T(c)},"^content.title.button$":function(a,b,c){S(c)},"^position.(my|at)$":function(a,b,c){"string"==typeof c&&(a[b]=new r.Corner(c))},"^position.container$":function(a,b,c){p.rendered&&J.appendTo(c)},"^show.ready$":function(){p.rendered?p.toggle(b):p.render(1)},"^style.classes$":function(a,b,c){J.attr("class",u+" qtip ui-helper-reset "+c)},"^style.widget|content.title":O,"^events.(render|show|move|hide|focus|blur)$":function(b,c,d){J[(a.isFunction(d)?"":"un")+"bind"]("tooltip"+c,d)},"^(show|hide|position).(event|target|fixed|inactive|leave|distance|viewport|adjust)":function(){var a=f.position;J.attr("tracking",a.target==="mouse"&&a.adjust.mouse),W(),V()}},a.extend(p,{render:function(d){if(p.rendered)return p;var g=f.content.text,h=f.content.title.text,i=f.position,j=a.Event("tooltiprender");return a.attr(e[0],"aria-describedby",D),J=L.tooltip=a("<div/>",{id:D,"class":u+" qtip ui-helper-reset "+y+" "+f.style.classes+" "+u+"-pos-"+f.position.my.abbrev(),width:f.style.width||"",height:f.style.height||"",tracking:i.target==="mouse"&&i.adjust.mouse,role:"alert","aria-live":"polite","aria-atomic":c,"aria-describedby":D+"-content","aria-hidden":b}).toggleClass(w,M.disabled).data("qtip",p).appendTo(f.position.container).append(L.content=a("<div />",{"class":u+"-content",id:D+"-content","aria-atomic":b})),p.rendered=-1,I=1,G=1,h&&(R(),a.isFunction(h)||T(h,c)),a.isFunction(g)||U(g,c),p.rendered=b,O(),a.each(f.events,function(b,c){a.isFunction(c)&&J.bind(b==="toggle"?"tooltipshow tooltiphide":"tooltip"+b,c)}),a.each(r,function(){this.initialize==="render"&&this(p)}),V(),J.queue("fx",function(a){j.originalEvent=M.event,J.trigger(j,[p]),I=0,G=0,p.redraw(),(f.show.ready||d)&&p.toggle(b,M.event,c),a()}),p},get:function(a){var b,c;switch(a.toLowerCase()){case"dimensions":b={height:J.outerHeight(),width:J.outerWidth()};break;case"offset":b=r.offset(J,f.position.container);break;default:c=N(a.toLowerCase()),b=c[0][c[1]],b=b.precedance?b.string():b}return b},set:function(e,g){function n(a,b){var c,d,e;for(c in l)for(d in l[c])if(e=(new RegExp(d,"i")).exec(a))b.push(e),l[c][d].apply(p,b)}var h=/^position\.(my|at|adjust|target|container)|style|content|show\.ready/i,i=/^content\.(title|attr)|style/i,j=c,k=c,l=p.checks,m;return"string"==typeof e?(m=e,e={},e[m]=g):e=a.extend(b,{},e),a.each(e,function(b,c){var d=N(b.toLowerCase()),f;f=d[0][d[1]],d[0][d[1]]="object"==typeof c&&c.nodeType?a(c):c,e[b]=[d[0],d[1],c,f],j=h.test(b)||j,k=i.test(b)||k}),H(f),G=I=1,a.each(e,n),G=I=0,p.rendered&&J[0].offsetWidth>0&&(j&&p.reposition(f.position.target==="mouse"?d:M.event),k&&p.redraw()),p},toggle:function(e,g){function u(){e?(a.browser.msie&&J[0].style.removeAttribute("filter"),J.css("overflow",""),"string"==typeof i.autofocus&&a(i.autofocus,J).focus(),i.target.trigger("qtip-"+n+"-inactive")):J.css({display:"",visibility:"",opacity:"",left:"",top:""}),t=a.Event("tooltip"+(e?"visible":"hidden")),t.originalEvent=g?M.event:d,J.trigger(t,[p])}if(!p.rendered)return e?p.render(1):p;var h=e?"show":"hide",i=f[h],j=f[e?"hide":"show"],k=f.position,l=f.content,m=J[0].offsetWidth>0,o=e||i.target.length===1,q=!g||i.target.length<2||M.target[0]===g.target,r,t;(typeof e).search("boolean|number")&&(e=!m);if(!J.is(":animated")&&m===e&&q)return p;if(g){if(/over|enter/.test(g.type)&&/out|leave/.test(M.event.type)&&f.show.target.add(g.target).length===f.show.target.length&&J.has(g.relatedTarget).length)return p;M.event=a.extend({},g)}return t=a.Event("tooltip"+h),t.originalEvent=g?M.event:d,J.trigger(t,[p,90]),t.isDefaultPrevented()?p:(a.attr(J[0],"aria-hidden",!e),e?(M.origin=a.extend({},s),p.focus(g),a.isFunction(l.text)&&U(l.text,c),a.isFunction(l.title.text)&&T(l.title.text,c),!F&&k.target==="mouse"&&k.adjust.mouse&&(a(document).bind("mousemove.qtip",function(a){s={pageX:a.pageX,pageY:a.pageY,type:"mousemove"}}),F=b),p.reposition(g,arguments[2]),(t.solo=!!i.solo)&&a(x,i.solo).not(J).qtip("hide",t)):(clearTimeout(p.timers.show),delete M.origin,F&&!a(x+'[tracking="true"]:visible',i.solo).not(J).length&&(a(document).unbind("mousemove.qtip"),F=c),p.blur(g)),i.effect===c||o===c?(J[h](),u.call(J)):a.isFunction(i.effect)?(J.stop(1,1),i.effect.call(J,p),J.queue("fx",function(a){u(),a()})):J.fadeTo(90,e?1:0,u),e&&i.target.trigger("qtip-"+n+"-inactive"),p)},show:function(a){return p.toggle(b,a)},hide:function(a){return p.toggle(c,a)},focus:function(b){if(!p.rendered)return p;var c=a(x),d=parseInt(J[0].style.zIndex,10),e=q.zindex+c.length,f=a.extend({},b),g,h;return J.hasClass(z)||(h=a.Event("tooltipfocus"),h.originalEvent=f,J.trigger(h,[p,e]),h.isDefaultPrevented()||(d!==e&&(c.each(function(){this.style.zIndex>d&&(this.style.zIndex=this.style.zIndex-1)}),c.filter("."+z).qtip("blur",f)),J.addClass(z)[0].style.zIndex=e)),p},blur:function(b){var c=a.extend({},b),d;return J.removeClass(z),d=a.Event("tooltipblur"),d.originalEvent=c,J.trigger(d,[p]),p},reposition:function(b,d){if(!p.rendered||G)return p;G=1;var e=f.position.target,g=f.position,h=g.my,n=g.at,o=g.adjust,q=o.method.split(" "),t=J.outerWidth(),u=J.outerHeight(),v=0,w=0,x=a.Event("tooltipmove"),y=J.css("position")==="fixed",z=g.viewport,A={left:0,top:0},B=g.container,C=J[0].offsetWidth>0,D,E,F;if(a.isArray(e)&&e.length===2)n={x:j,y:i},A={left:e[0],top:e[1]};else if(e==="mouse"&&(b&&b.pageX||M.event.pageX))n={x:j,y:i},b=(b&&(b.type==="resize"||b.type==="scroll")?M.event:b&&b.pageX&&b.type==="mousemove"?b:s&&s.pageX&&(o.mouse||!b||!b.pageX)?{pageX:s.pageX,pageY:s.pageY}:!o.mouse&&M.origin&&M.origin.pageX&&f.show.distance?M.origin:b)||b||M.event||s||{},A={top:b.pageY,left:b.pageX};else{e==="event"&&b&&b.target&&b.type!=="scroll"&&b.type!=="resize"?M.target=a(b.target):e!=="event"&&(M.target=a(e.jquery?e:L.target)),e=M.target,e=a(e).eq(0);if(e.length===0)return p;e[0]===document||e[0]===window?(v=r.iOS?window.innerWidth:e.width(),w=r.iOS?window.innerHeight:e.height(),e[0]===window&&(A={top:(z||e).scrollTop(),left:(z||e).scrollLeft()})):r.imagemap&&e.is("area")?D=r.imagemap(p,e,n,r.viewport?q:c):r.svg&&typeof e[0].xmlbase=="string"?D=r.svg(p,e,n,r.viewport?q:c):(v=e.outerWidth(),w=e.outerHeight(),A=r.offset(e,B)),D&&(v=D.width,w=D.height,E=D.offset,A=D.position);if(r.iOS>3.1&&r.iOS<4.1||r.iOS>=4.3&&r.iOS<4.33||!r.iOS&&y)F=a(window),A.left-=F.scrollLeft(),A.top-=F.scrollTop();A.left+=n.x===l?v:n.x===m?v/2:0,A.top+=n.y===k?w:n.y===m?w/2:0}return A.left+=o.x+(h.x===l?-t:h.x===m?-t/2:0),A.top+=o.y+(h.y===k?-u:h.y===m?-u/2:0),r.viewport?(A.adjusted=r.viewport(p,A,g,v,w,t,u),E&&A.adjusted.left&&(A.left+=E.left),E&&A.adjusted.top&&(A.top+=E.top)):A.adjusted={left:0,top:0},x.originalEvent=a.extend({},b),J.trigger(x,[p,A,z.elem||z]),x.isDefaultPrevented()?p:(delete A.adjusted,d===c||!C||isNaN(A.left)||isNaN(A.top)||e==="mouse"||!a.isFunction(g.effect)?J.css(A):a.isFunction(g.effect)&&(g.effect.call(J,p,a.extend({},A)),J.queue(function(b){a(this).css({opacity:"",height:""}),a.browser.msie&&this.style.removeAttribute("filter"),b()})),G=0,p)},redraw:function(){if(p.rendered<1||I)return p;var a=f.position.container,b,c,d,e;return I=1,f.style.height&&J.css(h,f.style.height),f.style.width?J.css(g,f.style.width):(J.css(g,"").addClass(B),c=J.width()+1,d=J.css("max-width")||"",e=J.css("min-width")||"",b=(d+e).indexOf("%")>-1?a.width()/100:0,d=(d.indexOf("%")>-1?b:1)*parseInt(d,10)||c,e=(e.indexOf("%")>-1?b:1)*parseInt(e,10)||0,c=d+e?Math.min(Math.max(c,e),d):c,J.css(g,Math.round(c)).removeClass(B)),I=0,p},disable:function(b){return"boolean"!=typeof b&&(b=!J.hasClass(w)&&!M.disabled),p.rendered?(J.toggleClass(w,b),a.attr(J[0],"aria-disabled",b)):M.disabled=!!b,p},enable:function(){return p.disable(c)},destroy:function(){var c=e[0],d=a.attr(c,E),g=e.data("qtip");p.destroyed=b,p.rendered&&(J.stop(1,0).remove(),a.each(p.plugins,function(){this.destroy&&this.destroy()})),clearTimeout(p.timers.show),clearTimeout(p.timers.hide),W();if(!g||p===g)a.removeData(c,"qtip"),f.suppress&&d&&(a.attr(c,"title",d),e.removeAttr(E)),e.removeAttr("aria-describedby");return e.unbind(".qtip-"+n),delete t[p.id],e}})}function J(e,f){var g,h,i,j,k,l=a(this),m=a(document.body),n=this===document?m:l,o=l.metadata?l.metadata(f.metadata):d,p=f.metadata.type==="html5"&&o?o[f.metadata.name]:d,s=l.data(f.metadata.name||"qtipopts");try{s=typeof s=="string"?a.parseJSON(s):s}catch(t){G("Unable to parse HTML5 attribute data: "+s)}j=a.extend(b,{},q.defaults,f,typeof s=="object"?H(s):d,H(p||o)),h=j.position,j.id=e;if("boolean"==typeof j.content.text){i=l.attr(j.content.attr);if(j.content.attr!==c&&i)j.content.text=i;else return G("Unable to locate content for tooltip! Aborting render of tooltip on element: ",l),c}h.container.length||(h.container=m),h.target===c&&(h.target=n),j.show.target===c&&(j.show.target=n),j.show.solo===b&&(j.show.solo=h.container.closest("body")),j.hide.target===c&&(j.hide.target=n),j.position.viewport===b&&(j.position.viewport=h.container),h.container=h.container.eq(0),h.at=new r.Corner(h.at),h.my=new r.Corner(h.my);if(a.data(this,"qtip"))if(j.overwrite)l.qtip("destroy");else if(j.overwrite===c)return c;return j.suppress&&(k=a.attr(this,"title"))&&a(this).removeAttr("title").attr(E,k).attr("title",""),g=new I(l,j,e,!!i),a.data(this,"qtip",g),l.bind("remove.qtip-"+e+" removeqtip.qtip-"+e,function(){g.destroy()}),g}function K(d){var e=this,f=d.elements.tooltip,g=d.options.content.ajax,h=q.defaults.content.ajax,i=".qtip-ajax",j=/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,k=b,l=c,m;d.checks.ajax={"^content.ajax":function(a,b,c){b==="ajax"&&(g=c),b==="once"?e.init():g&&g.url?e.load():f.unbind(i)}},a.extend(e,{init:function(){return g&&g.url&&f.unbind(i)[g.once?"one":"bind"]("tooltipshow"+i,e.load),e},load:function(f){function r(){var e;if(d.destroyed)return;k=c,p&&(l=b,d.show(f.originalEvent)),(e=h.complete||g.complete)&&a.isFunction(e)&&e.apply(g.context||d,arguments)}function s(b,c,e){var f;if(d.destroyed)return;o&&(b=a("<div/>").append(b.replace(j,"")).find(o)),(f=h.success||g.success)&&a.isFunction(f)?f.call(g.context||d,b,c,e):d.set("content.text",b)}function t(a,b,c){if(d.destroyed||a.status===0)return;d.set("content.text",b+": "+c)}if(l){l=c;return}var i=g.url.indexOf(" "),n=g.url,o,p=!g.loading&&k;if(p)try{f.preventDefault()}catch(q){}else if(f&&f.isDefaultPrevented())return e;m&&m.abort&&m.abort(),i>-1&&(o=n.substr(i),n=n.substr(0,i)),m=a.ajax(a.extend({error:h.error||t,context:d},g,{url:n,success:s,complete:r}))},destroy:function(){m&&m.abort&&m.abort(),d.destroyed=b}}),e.init()}function L(a,b,c){var d=Math.ceil(b/2),e=Math.ceil(c/2),f={bottomright:[[0,0],[b,c],[b,0]],bottomleft:[[0,0],[b,0],[0,c]],topright:[[0,c],[b,0],[b,c]],topleft:[[0,0],[0,c],[b,c]],topcenter:[[0,c],[d,0],[b,c]],bottomcenter:[[0,0],[b,0],[d,c]],rightcenter:[[0,0],[b,e],[0,c]],leftcenter:[[b,0],[b,c],[0,e]]};return f.lefttop=f.bottomright,f.righttop=f.bottomleft,f.leftbottom=f.topright,f.rightbottom=f.topleft,f[a.string()]}function M(n,o){function C(){w.width=s.height,w.height=s.width}function D(){w.width=s.width,w.height=s.height}function E(a,d,g,h){if(!t.tip)return;var o=q.corner.clone(),r=g.adjusted,u=n.options.position.adjust.method.split(" "),w=u[0],x=u[1]||u[0],y={left:c,top:c,x:0,y:0},z,A={},B;q.corner.fixed!==b&&(w===p&&o.precedance===e&&r.left&&o.y!==m?o.precedance=o.precedance===e?f:e:w!==p&&r.left&&(o.x=o.x===m?r.left>0?j:l:o.x===j?l:j),x===p&&o.precedance===f&&r.top&&o.x!==m?o.precedance=o.precedance===f?e:f:x!==p&&r.top&&(o.y=o.y===m?r.top>0?i:k:o.y===i?k:i),o.string()!==v.corner.string()&&(v.top!==r.top||v.left!==r.left)&&q.update(o,c)),z=q.position(o,r),z[o.x]+=F(o,o.x,b),z[o.y]+=F(o,o.y,b),z.right!==undefined&&(z.left=-z.right),z.bottom!==undefined&&(z.top=-z.bottom),z.user=Math.max(0,s.offset);if(y.left=w===p&&!!r.left)o.x===m?A["margin-left"]=y.x=z["margin-left"]-r.left:(B=z.right!==undefined?[r.left,-z.left]:[-r.left,z.left],(y.x=Math.max(B[0],B[1]))>B[0]&&(g.left-=r.left,y.left=c),A[z.right!==undefined?l:j]=y.x);if(y.top=x===p&&!!r.top)o.y===m?A["margin-top"]=y.y=z["margin-top"]-r.top:(B=z.bottom!==undefined?[r.top,-z.top]:[-r.top,z.top],(y.y=Math.max(B[0],B[1]))>B[0]&&(g.top-=r.top,y.top=c),A[z.bottom!==undefined?k:i]=y.y);t.tip.css(A).toggle(!(y.x&&y.y||o.x===m&&y.y||o.y===m&&y.x)),g.left-=z.left.charAt?z.user:w!==p||y.top||!y.left&&!y.top?z.left:0,g.top-=z.top.charAt?z.user:x!==p||y.left||!y.left&&!y.top?z.top:0,v.left=r.left,v.top=r.top,v.corner=o.clone()}function F(a,b,c){b=b?b:a[a.precedance];var d=u.hasClass(B),e=t.titlebar&&a.y===i,f=e?t.titlebar:t.tooltip,g="border-"+b+"-width",h;return u.addClass(B),h=parseInt(f.css(g),10),h=(c?h||parseInt(u.css(g),10):h)||0,u.toggleClass(B,d),h}function G(b){function j(a){return parseInt(d.css(a),10)||parseInt(u.css(a),10)}var c=t.titlebar&&b.y===i,d=c?t.titlebar:t.content,e=a.browser.mozilla,f=e?"-moz-":a.browser.webkit?"-webkit-":"",g="border-radius-"+b.y+b.x,h="border-"+b.y+"-"+b.x+"-radius";return j(h)||j(f+h)||j(f+g)||j(g)||0}function H(a){var b=a.precedance===f,c=w[b?g:h],d=w[b?h:g],e=a.string().indexOf(m)>-1,i=c*(e?.5:1),j=Math.pow,k=Math.round,l,n,o,p=Math.sqrt(j(i,2)+j(d,2)),q=[y/i*p,y/d*p];return q[2]=Math.sqrt(j(q[0],2)-j(y,2)),q[3]=Math.sqrt(j(q[1],2)-j(y,2)),l=p+q[2]+q[3]+(e?0:q[0]),n=l/p,o=[k(n*d),k(n*c)],{height:o[b?0:1],width:o[b?1:0]}}var q=this,s=n.options.style.tip,t=n.elements,u=t.tooltip,v={top:0,left:0},w={width:s.width,height:s.height},x={},y=s.border||0,z=".qtip-tip",A=!!(a("<canvas />")[0]||{}).getContext;q.corner=d,q.mimic=d,q.border=y,q.offset=s.offset,q.size=w,n.checks.tip={"^position.my|style.tip.(corner|mimic|border)$":function(){q.init()||q.destroy(),n.reposition()},"^style.tip.(height|width)$":function(){w={width:s.width,height:s.height},q.create(),q.update(),n.reposition()},"^content.title.text|style.(classes|widget)$":function(){t.tip&&t.tip.length&&q.update()}},a.extend(q,{init:function(){var b=q.detectCorner()&&(A||a.browser.msie);return b&&(q.create(),q.update(),u.unbind(z).bind("tooltipmove"+z,E)),b},detectCorner:function(){var a=s.corner,d=n.options.position,e=d.at,f=d.my.string?d.my.string():d.my;return a===c||f===c&&e===c?c:(a===b?q.corner=new r.Corner(f):a.string||(q.corner=new r.Corner(a),q.corner.fixed=b),v.corner=new r.Corner(q.corner.string()),q.corner.string()!=="centercenter")},detectColours:function(b){var c,d,e,f=t.tip.css("cssText",""),g=b||q.corner,h=g[g.precedance],j="border-"+h+"-color",k="border"+h.charAt(0)+h.substr(1)+"Color",l=/rgba?\(0, 0, 0(, 0)?\)|transparent|#123456/i,n="background-color",o="transparent",p=" !important",r=t.titlebar&&(g.y===i||g.y===m&&f.position().top+w.height/2+s.offset<t.titlebar.outerHeight(1)),v=r?t.titlebar:t.tooltip;u.addClass(B),x.fill=d=f.css(n),x.border=e=f[0].style[k]||f.css(j)||u.css(j);if(!d||l.test(d))x.fill=v.css(n)||o,l.test(x.fill)&&(x.fill=u.css(n)||d);if(!e||l.test(e)||e===a(document.body).css("color")){x.border=v.css(j)||o;if(l.test(x.border)||x.border===v.css("color"))x.border=u.css(j)||u.css(k)||e}a("*",f).add(f).css("cssText",n+":"+o+p+";border:0"+p+";"),u.removeClass(B)},create:function(){var b=w.width,c=w.height,d;t.tip&&t.tip.remove(),t.tip=a("<div />",{"class":"ui-tooltip-tip"}).css({width:b,height:c}).prependTo(u),A?a("<canvas />").appendTo(t.tip)[0].getContext("2d").save():(d='<vml:shape coordorigin="0,0" style="display:inline-block; position:absolute; behavior:url(#default#VML);"></vml:shape>',t.tip.html(d+d),a("*",t.tip).bind("click mousedown",function(a){a.stopPropagation()}))},update:function(g,h){var n=t.tip,o=n.children(),p=w.width,z=w.height,B="px solid ",E="px dashed transparent",G=s.mimic,I=Math.round,J,K,M,N,O;g||(g=v.corner||q.corner),G===c?G=g:(G=new r.Corner(G),G.precedance=g.precedance,G.x==="inherit"?G.x=g.x:G.y==="inherit"?G.y=g.y:G.x===G.y&&(G[g.precedance]=g[g.precedance])),J=G.precedance,g.precedance===e?C():D(),t.tip.css({width:p=w.width,height:z=w.height}),q.detectColours(g),x.border!=="transparent"?(y=F(g,d,b),s.border===0&&y>0&&(x.fill=x.border),q.border=y=s.border!==b?s.border:y):q.border=y=0,M=L(G,p,z),q.size=O=H(g),n.css(O),g.precedance===f?N=[I(G.x===j?y:G.x===l?O.width-p-y:(O.width-p)/2),I(G.y===i?O.height-z:0)]:N=[I(G.x===j?O.width-p:0),I(G.y===i?y:G.y===k?O.height-z-y:(O.height-z)/2)],A?(o.attr(O),K=o[0].getContext("2d"),K.restore(),K.save(),K.clearRect(0,0,3e3,3e3),K.fillStyle=x.fill,K.strokeStyle=x.border,K.lineWidth=y*2,K.lineJoin="miter",K.miterLimit=100,K.translate(N[0],N[1]),K.beginPath(),K.moveTo(M[0][0],M[0][1]),K.lineTo(M[1][0],M[1][1]),K.lineTo(M[2][0],M[2][1]),K.closePath(),y&&(u.css("background-clip")==="border-box"&&(K.strokeStyle=x.fill,K.stroke()),K.strokeStyle=x.border,K.stroke()),K.fill()):(M="m"+M[0][0]+","+M[0][1]+" l"+M[1][0]+","+M[1][1]+" "+M[2][0]+","+M[2][1]+" xe",N[2]=y&&/^(r|b)/i.test(g.string())?parseFloat(a.browser.version,10)===8?2:1:0,o.css({antialias:""+(G.string().indexOf(m)>-1),left:N[0]-N[2]*Number(J===e),top:N[1]-N[2]*Number(J===f),width:p+y,height:z+y}).each(function(b){var c=a(this);c[c.prop?"prop":"attr"]({coordsize:p+y+" "+(z+y),path:M,fillcolor:x.fill,filled:!!b,stroked:!b}).css({display:y||b?"block":"none"}),!b&&c.html()===""&&c.html('<vml:stroke weight="'+y*2+'px" color="'+x.border+'" miterlimit="1000" joinstyle="miter" '+' style="behavior:url(#default#VML); display:inline-block;" />')})),h!==c&&q.position(g)},position:function(b){var d=t.tip,k={},l=Math.max(0,s.offset),n,o,p;return s.corner===c||!d?c:(b=b||q.corner,n=b.precedance,o=H(b),p=[b.x,b.y],n===e&&p.reverse(),a.each(p,function(a,c){var d,e;c===m?(d=n===f?j:i,k[d]="50%",k["margin-"+d]=-Math.round(o[n===f?g:h]/2)+l):(d=F(b,c),e=G(b),k[c]=a?0:l+(e>d?e:-d))}),k[b[n]]-=o[n===e?g:h],d.css({top:"",bottom:"",left:"",right:"",margin:""}).css(k),k)},destroy:function(){t.tip&&t.tip.remove(),t.tip=!1,u.unbind(z)}}),q.init()}function N(d){function q(){o=a(n,h).not("[disabled]").map(function(){return typeof this.focus=="function"?this:null})}function s(a){o.length<1&&a.length?a.not("body").blur():o.first().focus()}function t(b){var d=a(b.target),e=d.closest(".qtip"),f;f=e.length<1?c:parseInt(e[0].style.zIndex,10)>parseInt(h[0].style.zIndex,10),!f&&a(b.target).closest(x)[0]!==h[0]&&s(d)}var e=this,f=d.options.show.modal,g=d.elements,h=g.tooltip,i="#qtip-overlay",j=".qtipmodal",k=j+d.id,l="is-modal-qtip",m=a(document.body),n=r.modal.focusable.join(","),o={},p;d.checks.modal={"^show.modal.(on|blur)$":function(){e.init(),g.overlay.toggle(h.is(":visible"))},"^content.text$":function(){q()}},a.extend(e,{init:function(){return f.on?(p=e.create(),h.attr(l,b).css("z-index",r.modal.zindex+a(x+"["+l+"]").length).unbind(j).unbind(k).bind("tooltipshow"+j+" tooltiphide"+j,function(b,c,d){var f=b.originalEvent;if(b.target===h[0])if(f&&b.type==="tooltiphide"&&/mouse(leave|enter)/.test(f.type)&&a(f.relatedTarget).closest(p[0]).length)try{b.preventDefault()}catch(g){}else(!f||f&&!f.solo)&&e[b.type.replace("tooltip","")](b,d)}).bind("tooltipfocus"+j,function(b){if(b.isDefaultPrevented()||b.target!==h[0])return;var c=a(x).filter("["+l+"]"),d=r.modal.zindex+c.length,e=parseInt(h[0].style.zIndex,10);p[0].style.zIndex=d-2,c.each(function(){this.style.zIndex>e&&(this.style.zIndex-=1)}),c.end().filter("."+z).qtip("blur",b.originalEvent),h.addClass(z)[0].style.zIndex=d;try{b.preventDefault()}catch(f){}}).bind("tooltiphide"+j,function(b){b.target===h[0]&&a("["+l+"]").filter(":visible").not(h).last().qtip("focus",b)}),f.escape&&a(document).unbind(k).bind("keydown"+k,function(a){a.keyCode===27&&h.hasClass(z)&&d.hide(a)}),f.blur&&g.overlay.unbind(k).bind("click"+k,function(a){h.hasClass(z)&&d.hide(a)}),q(),e):e},create:function(){function d(){p.css({height:a(window).height(),width:a(window).width()})}var b=a(i);return b.length?g.overlay=b.insertAfter(a(x).last()):(p=g.overlay=a("<div />",{id:i.substr(1),html:"<div></div>",mousedown:function(){return c}}).hide().insertAfter(a(x).last()),a(window).unbind(j).bind("resize"+j,d),d(),p)},toggle:function(d,g,i){if(d&&d.isDefaultPrevented())return e;var j=f.effect,n=g?"show":"hide",o=p.is(":visible"),q=a("["+l+"]").filter(":visible").not(h),r;return p||(p=e.create()),p.is(":animated")&&o===g||!g&&q.length?e:(g?(p.css({left:0,top:0}),p.toggleClass("blurs",f.blur),f.stealfocus!==c&&(m.bind("focusin"+k,t),s(a("body *")))):m.unbind("focusin"+k),p.stop(b,c),a.isFunction(j)?j.call(p,g):j===c?p[n]():p.fadeTo(parseInt(i,10)||90,g?1:0,function(){g||a(this).hide()}),g||p.queue(function(a){p.css({left:"",top:""}),a()}),e)},show:function(a,c){return e.toggle(a,b,c)},hide:function(a,b){return e.toggle(a,c,b)},destroy:function(){var b=p;return b&&(b=a("["+l+"]").not(h).length<1,b?(g.overlay.remove(),a(document).unbind(j)):g.overlay.unbind(j+d.id),m.undelegate("*","focusin"+k)),h.removeAttr(l).unbind(j)}}),e.init()}function O(b){var c=this,d=b.elements,e=d.tooltip,f=".bgiframe-"+b.id;a.extend(c,{init:function(){d.bgiframe=a('<iframe class="ui-tooltip-bgiframe" frameborder="0" tabindex="-1" src="javascript:\'\';"  style="display:block; position:absolute; z-index:-1; filter:alpha(opacity=0); -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";"></iframe>'),d.bgiframe.appendTo(e),e.bind("tooltipmove"+f,c.adjust)},adjust:function(){var a=b.get("dimensions"),c=b.plugins.tip,f=d.tip,g,h;h=parseInt(e.css("border-left-width"),10)||0,h={left:-h,top:-h},c&&f&&(g=c.corner.precedance==="x"?["width","left"]:["height","top"],h[g[1]]-=f[g[0]]()),d.bgiframe.css(h).css(a)},destroy:function(){d.bgiframe.remove(),e.unbind(f)}}),c.init()}"use strict";var b=!0,c=!1,d=null,e="x",f="y",g="width",h="height",i="top",j="left",k="bottom",l="right",m="center",n="flip",o="flipinvert",p="shift",q,r,s,t={},u="ui-tooltip",v="ui-widget",w="ui-state-disabled",x="div.qtip."+u,y=u+"-default",z=u+"-focus",A=u+"-hover",B=u+"-fluid",C="-31000px",D="_replacedByqTip",E="oldtitle",F;q=a.fn.qtip=function(e,f,g){var h=(""+e).toLowerCase(),i=d,j=a.makeArray(arguments).slice(1),k=j[j.length-1],l=this[0]?a.data(this[0],"qtip"):d;if(!arguments.length&&l||h==="api")return l;if("string"==typeof e)return this.each(function(){var d=a.data(this,"qtip");if(!d)return b;k&&k.timeStamp&&(d.cache.event=k);if(h!=="option"&&h!=="options"||!f)d[h]&&d[h].apply(d[h],j);else if(a.isPlainObject(f)||g!==undefined)d.set(f,g);else return i=d.get(f),c}),i!==d?i:this;if("object"==typeof e||!arguments.length)return l=H(a.extend(b,{},e)),q.bind.call(this,l,k)},q.bind=function(d,e){return this.each(function(f){function m(b){function d(){k.render(typeof b=="object"||g.show.ready),h.show.add(h.hide).unbind(j)}if(k.cache.disabled)return c;k.cache.event=a.extend({},b),k.cache.target=b?a(b.target):[undefined],g.show.delay>0?(clearTimeout(k.timers.show),k.timers.show=setTimeout(d,g.show.delay),i.show!==i.hide&&h.hide.bind(i.hide,function(){clearTimeout(k.timers.show)})):d()}var g,h,i,j,k,l;l=a.isArray(d.id)?d.id[f]:d.id,l=!l||l===c||l.length<1||t[l]?q.nextid++:t[l]=l,j=".qtip-"+l+"-create",k=J.call(this,l,d);if(k===c)return b;g=k.options,a.each(r,function(){this.initialize==="initialize"&&this(k)}),h={show:g.show.target,hide:g.hide.target},i={show:a.trim(""+g.show.event).replace(/ /g,j+" ")+j,hide:a.trim(""+g.hide.event).replace(/ /g,j+" ")+j},/mouse(over|enter)/i.test(i.show)&&!/mouse(out|leave)/i.test(i.hide)&&(i.hide+=" mouseleave"+j),h.show.bind("mousemove"+j,function(a){s={pageX:a.pageX,pageY:a.pageY,type:"mousemove"},k.cache.onTarget=b}),h.show.bind(i.show,m),(g.show.ready||g.prerender)&&m(e)})},r=q.plugins={Corner:function(a){a=(""+a).replace(/([A-Z])/," $1").replace(/middle/gi,m).toLowerCase(),this.x=(a.match(/left|right/i)||a.match(/center/)||["inherit"])[0].toLowerCase(),this.y=(a.match(/top|bottom|center/i)||["inherit"])[0].toLowerCase();var b=a.charAt(0);this.precedance=b==="t"||b==="b"?f:e,this.string=function(){return this.precedance===f?this.y+this.x:this.x+this.y},this.abbrev=function(){var a=this.x.substr(0,1),b=this.y.substr(0,1);return a===b?a:this.precedance===f?b+a:a+b},this.invertx=function(a){this.x=this.x===j?l:this.x===l?j:a||this.x},this.inverty=function(a){this.y=this.y===i?k:this.y===k?i:a||this.y},this.clone=function(){return{x:this.x,y:this.y,precedance:this.precedance,string:this.string,abbrev:this.abbrev,clone:this.clone,invertx:this.invertx,inverty:this.inverty}}},offset:function(b,c){function j(a,b){d.left+=b*a.scrollLeft(),d.top+=b*a.scrollTop()}var d=b.offset(),e=b.closest("body")[0],f=c,g,h,i;if(f){do f.css("position")!=="static"&&(h=f.position(),d.left-=h.left+(parseInt(f.css("borderLeftWidth"),10)||0)+(parseInt(f.css("marginLeft"),10)||0),d.top-=h.top+(parseInt(f.css("borderTopWidth"),10)||0)+(parseInt(f.css("marginTop"),10)||0),!g&&(i=f.css("overflow"))!=="hidden"&&i!=="visible"&&(g=f));while((f=a(f[0].offsetParent)).length);g&&g[0]!==e&&j(g,1)}return d},iOS:parseFloat((""+(/CPU.*OS ([0-9_]{1,5})|(CPU like).*AppleWebKit.*Mobile/i.exec(navigator.userAgent)||[0,""])[1]).replace("undefined","3_2").replace("_",".").replace("_",""))||c,fn:{attr:function(b,c){if(this.length){var d=this[0],e="title",f=a.data(d,"qtip");if(b===e&&f&&"object"==typeof f&&f.options.suppress)return arguments.length<2?a.attr(d,E):(f&&f.options.content.attr===e&&f.cache.attr&&f.set("content.text",c),this.attr(E,c))}return a.fn["attr"+D].apply(this,arguments)},clone:function(b){var c=a([]),d="title",e=a.fn["clone"+D].apply(this,arguments);return b||e.filter("["+E+"]").attr("title",function(){return a.attr(this,E)}).removeAttr(E),e}}},a.each(r.fn,function(c,d){if(!d||a.fn[c+D])return b;var e=a.fn[c+D]=a.fn[c];a.fn[c]=function(){return d.apply(this,arguments)||e.apply(this,arguments)}}),a.ui||(a["cleanData"+D]=a.cleanData,a.cleanData=function(b){for(var c=0,d;(d=b[c])!==undefined;c++)try{a(d).triggerHandler("removeqtip")}catch(e){}a["cleanData"+D](b)}),q.version="@VERSION",q.nextid=0,q.inactiveEvents="click dblclick mousedown mouseup mousemove mouseleave mouseenter".split(" "),q.zindex=15e3,q.defaults={prerender:c,id:c,overwrite:b,suppress:b,content:{text:b,attr:"title",title:{text:c,button:c}},position:{my:"top left",at:"bottom right",target:c,container:c,viewport:c,adjust:{x:0,y:0,mouse:b,resize:b,method:"flip flip"},effect:function(b,d,e){a(this).animate(d,{duration:200,queue:c})}},show:{target:c,event:"mouseenter",effect:b,delay:90,solo:c,ready:c,autofocus:c},hide:{target:c,event:"mouseleave",effect:b,delay:0,fixed:c,inactive:c,leave:"window",distance:c},style:{classes:"",widget:c,width:c,height:c,def:b},events:{render:d,move:d,show:d,hide:d,toggle:d,visible:d,hidden:d,focus:d,blur:d}},r.svg=function(b,c,d,e){var f=a(document),g=c[0],h={width:0,height:0,position:{top:1e10,left:1e10}},i,j,k,l,m;while(!g.getBBox)g=g.parentNode;if(g.getBBox&&g.parentNode){i=g.getBBox(),j=g.getScreenCTM(),k=g.farthestViewportElement||g;if(!k.createSVGPoint)return h;l=k.createSVGPoint(),l.x=i.x,l.y=i.y,m=l.matrixTransform(j),h.position.left=m.x,h.position.top=m.y,l.x+=i.width,l.y+=i.height,m=l.matrixTransform(j),h.width=m.x-h.position.left,h.height=m.y-h.position.top,h.position.left+=f.scrollLeft(),h.position.top+=f.scrollTop()}return h},r.ajax=function(a){var b=a.plugins.ajax;return"object"==typeof b?b:a.plugins.ajax=new K(a)},r.ajax.initialize="render",r.ajax.sanitize=function(a){var b=a.content,c;b&&"ajax"in b&&(c=b.ajax,typeof c!="object"&&(c=a.content.ajax={url:c}),"boolean"!=typeof c.once&&c.once&&(c.once=!!c.once))},a.extend(b,q.defaults,{content:{ajax:{loading:b,once:b}}}),r.tip=function(a){var b=a.plugins.tip;return"object"==typeof b?b:a.plugins.tip=new M(a)},r.tip.initialize="render",r.tip.sanitize=function(a){var c=a.style,d;c&&"tip"in c&&(d=a.style.tip,typeof d!="object"&&(a.style.tip={corner:d}),/string|boolean/i.test(typeof d.corner)||(d.corner=b),typeof d.width!="number"&&delete d.width,typeof d.height!="number"&&delete d.height,typeof d.border!="number"&&d.border!==b&&delete d.border,typeof d.offset!="number"&&delete d.offset)},a.extend(b,q.defaults,{style:{tip:{corner:b,mimic:c,width:6,height:6,border:b,offset:0}}}),r.modal=function(a){var b=a.plugins.modal;return"object"==typeof b?b:a.plugins.modal=new N(a)},r.modal.initialize="render",r.modal.sanitize=function(a){a.show&&(typeof a.show.modal!="object"?a.show.modal={on:!!a.show.modal}:typeof a.show.modal.on=="undefined"&&(a.show.modal.on=b))},r.modal.zindex=q.zindex-200,r.modal.focusable=["a[href]","area[href]","input","select","textarea","button","iframe","object","embed","[tabindex]","[contenteditable]"],a.extend(b,q.defaults,{show:{modal:{on:c,effect:b,blur:b,stealfocus:b,escape:b}}}),r.viewport=function(a,b,c,d,n,q,r){function J(a,c,d,e,f,g,h,i,j){var k=b[f],l=v[a],n=w[a],q=d===p,r=-C.offset[f]+B.offset[f]+B["scroll"+f],s=l===f?j:l===g?-j:-j/2,t=n===f?i:n===g?-i:-i/2,u=E&&E.size?E.size[h]||0:0,x=E&&E.corner&&E.corner.precedance===a&&!q?u:0,y=r-k+x,z=k+j-B[h]-r+x,A=s-(v.precedance===a||l===v[c]?t:0)-(n===m?i/2:0);return q?(x=E&&E.corner&&E.corner.precedance===c?u:0,A=(l===f?1:-1)*s-x,b[f]+=y>0?y:z>0?-z:0,b[f]=Math.max(-C.offset[f]+B.offset[f]+(x&&E.corner[a]===m?E.offset:0),k-A,Math.min(Math.max(-C.offset[f]+B.offset[f]+B[h],k+A),b[f]))):(e*=d===o?2:0,y>0&&(l!==f||z>0)?(b[f]-=A+e,H["invert"+a](f)):z>0&&(l!==g||y>0)&&(b[f]-=(l===m?-A:A)+e,H["invert"+a](g)),b[f]<r&&-b[f]>z&&(b[f]=k,H=undefined)),b[f]-k}var s=c.target,t=a.elements.tooltip,v=c.my,w=c.at,x=c.adjust,y=x.method.split(" "),z=y[0],A=y[1]||y[0],B=c.viewport,C=c.container,D=a.cache,E=a.plugins.tip,F={left:0,top:0},G,H,I;if(!B.jquery||s[0]===window||s[0]===document.body||x.method==="none")return F;G=t.css("position")==="fixed",B={elem:B,height:B[(B[0]===window?"h":"outerH")+"eight"](),width:B[(B[0]===window?"w":"outerW")+"idth"](),scrollleft:G?0:B.scrollLeft(),scrolltop:G?0:B.scrollTop(),offset:B.offset()||{left:0,top:0}},C={elem:C,scrollLeft:C.scrollLeft(),scrollTop:C.scrollTop(),offset:C.offset()||{left:0,top:0}};if(z!=="shift"||A!=="shift")H=v.clone();return F={left:z!=="none"?J(e,f,z,x.x,j,l,g,d,q):0,top:A!=="none"?J(f,e,A,x.y,i,k,h,n,r):0},H&&D.lastClass!==(I=u+"-pos-"+H.abbrev())&&t.removeClass(a.cache.lastClass).addClass(a.cache.lastClass=I),F},r.imagemap=function(b,c,d,e){function v(a,b,c){var d=0,e=1,f=1,g=0,h=0,n=a.width,o=a.height;while(n>0&&o>0&&e>0&&f>0){n=Math.floor(n/2),o=Math.floor(o/2),c.x===j?e=n:c.x===l?e=a.width-n:e+=Math.floor(n/2),c.y===i?f=o:c.y===k?f=a.height-o:f+=Math.floor(o/2),d=b.length;while(d--){if(b.length<2)break;g=b[d][0]-a.position.left,h=b[d][1]-a.position.top,(c.x===j&&g>=e||c.x===l&&g<=e||c.x===m&&(g<e||g>a.width-e)||c.y===i&&h>=f||c.y===k&&h<=f||c.y===m&&(h<f||h>a.height-f))&&b.splice(d,1)}}return{left:b[0][0],top:b[0][1]}}c.jquery||(c=a(c));var f=b.cache.areas={},g=(c[0].shape||c.attr("shape")).toLowerCase(),h=c[0].coords||c.attr("coords"),n=h.split(","),o=[],p=a('img[usemap="#'+c.parent("map").attr("name")+'"]'),q=p.offset(),r={width:0,height:0,position:{top:1e10,right:0,bottom:0,left:1e10}},s=0,t=0,u;q.left+=Math.ceil((p.outerWidth()-p.width())/2),q.top+=Math.ceil((p.outerHeight()-p.height())/2);if(g==="poly"){s=n.length;while(s--)t=[parseInt(n[--s],10),parseInt(n[s+1],10)],t[0]>r.position.right&&(r.position.right=t[0]),t[0]<r.position.left&&(r.position.left=t[0]),t[1]>r.position.bottom&&(r.position.bottom=t[1]),t[1]<r.position.top&&(r.position.top=t[1]),o.push(t)}else{s=-1;while(s++<n.length)o.push(parseInt(n[s],10))}switch(g){case"rect":r={width:Math.abs(o[2]-o[0]),height:Math.abs(o[3]-o[1]),position:{left:Math.min(o[0],o[2]),top:Math.min(o[1],o[3])}};break;case"circle":r={width:o[2]+2,height:o[2]+2,position:{left:o[0],top:o[1]}};break;case"poly":r.width=Math.abs(r.position.right-r.position.left),r.height=Math.abs(r.position.bottom-r.position.top),d.abbrev()==="c"?r.position={left:r.position.left+r.width/2,top:r.position.top+r.height/2}:(f[d+h]||(r.position=v(r,o.slice(),d),e&&(e[0]==="flip"||e[1]==="flip")&&(r.offset=v(r,o.slice(),{x:d.x===j?l:d.x===l?j:m,y:d.y===i?k:d.y===k?i:m}),r.offset.left-=r.position.left,r.offset.top-=r.position.top),f[d+h]=r),r=f[d+h]),r.width=r.height=0}return r.position.left+=q.left,r.position.top+=q.top,r},r.bgiframe=function(b){var d=a.browser,e=b.plugins.bgiframe;return a("select, object").length<1||!d.msie||(""+d.version).charAt(0)!=="6"?c:"object"==typeof e?e:b.plugins.bgiframe=new O(b)},r.bgiframe.initialize="render"});
+/*
+ * qTip2 - Pretty powerful tooltips - v3.0.3
+ * http://qtip2.com
+ *
+ * Copyright (c) 2017
+ * Released under the MIT licenses
+ * http://jquery.org/license
+ *
+ * Date: Mon Aug 28 2017 05:13 EDT-0400
+ * Plugins: viewport
+ * Styles: core
+ */
+/*global window: false, jQuery: false, console: false, define: false */
+
+/* Cache window, document, undefined */
+(function( window, document, undefined ) {
+
+// Uses AMD or browser globals to create a jQuery plugin.
+(function( factory ) {
+	"use strict";
+	if(typeof define === 'function' && define.amd) {
+		define(['jquery'], factory);
+	}
+	else if(jQuery && !jQuery.fn.qtip) {
+		factory(jQuery);
+	}
+}
+(function($) {
+	"use strict"; // Enable ECMAScript "strict" operation for this function. See more: http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
+;// Munge the primitives - Paul Irish tip
+var TRUE = true,
+FALSE = false,
+NULL = null,
+
+// Common variables
+X = 'x', Y = 'y',
+WIDTH = 'width',
+HEIGHT = 'height',
+
+// Positioning sides
+TOP = 'top',
+LEFT = 'left',
+BOTTOM = 'bottom',
+RIGHT = 'right',
+CENTER = 'center',
+
+// Position adjustment types
+FLIP = 'flip',
+FLIPINVERT = 'flipinvert',
+SHIFT = 'shift',
+
+// Shortcut vars
+QTIP, PROTOTYPE, CORNER, CHECKS,
+PLUGINS = {},
+NAMESPACE = 'qtip',
+ATTR_HAS = 'data-hasqtip',
+ATTR_ID = 'data-qtip-id',
+WIDGET = ['ui-widget', 'ui-tooltip'],
+SELECTOR = '.'+NAMESPACE,
+INACTIVE_EVENTS = 'click dblclick mousedown mouseup mousemove mouseleave mouseenter'.split(' '),
+
+CLASS_FIXED = NAMESPACE+'-fixed',
+CLASS_DEFAULT = NAMESPACE + '-default',
+CLASS_FOCUS = NAMESPACE + '-focus',
+CLASS_HOVER = NAMESPACE + '-hover',
+CLASS_DISABLED = NAMESPACE+'-disabled',
+
+replaceSuffix = '_replacedByqTip',
+oldtitle = 'oldtitle',
+trackingBound,
+
+// Browser detection
+BROWSER = {
+	/*
+	 * IE version detection
+	 *
+	 * Adapted from: http://ajaxian.com/archives/attack-of-the-ie-conditional-comment
+	 * Credit to James Padolsey for the original implemntation!
+	 */
+	ie: (function() {
+		/* eslint-disable no-empty */
+		var v, i;
+		for (
+			v = 4, i = document.createElement('div');
+			(i.innerHTML = '<!--[if gt IE ' + v + ']><i></i><![endif]-->') && i.getElementsByTagName('i')[0];
+			v+=1
+		) {}
+		return v > 4 ? v : NaN;
+		/* eslint-enable no-empty */
+	})(),
+
+	/*
+	 * iOS version detection
+	 */
+	iOS: parseFloat(
+		('' + (/CPU.*OS ([0-9_]{1,5})|(CPU like).*AppleWebKit.*Mobile/i.exec(navigator.userAgent) || [0,''])[1])
+		.replace('undefined', '3_2').replace('_', '.').replace('_', '')
+	) || FALSE
+};
+;function QTip(target, options, id, attr) {
+	// Elements and ID
+	this.id = id;
+	this.target = target;
+	this.tooltip = NULL;
+	this.elements = { target: target };
+
+	// Internal constructs
+	this._id = NAMESPACE + '-' + id;
+	this.timers = { img: {} };
+	this.options = options;
+	this.plugins = {};
+
+	// Cache object
+	this.cache = {
+		event: {},
+		target: $(),
+		disabled: FALSE,
+		attr: attr,
+		onTooltip: FALSE,
+		lastClass: ''
+	};
+
+	// Set the initial flags
+	this.rendered = this.destroyed = this.disabled = this.waiting =
+		this.hiddenDuringWait = this.positioning = this.triggering = FALSE;
+}
+PROTOTYPE = QTip.prototype;
+
+PROTOTYPE._when = function(deferreds) {
+	return $.when.apply($, deferreds);
+};
+
+PROTOTYPE.trim = function(string) {
+	return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+}
+
+QTip.isFunction = function(obj) {
+	return typeof obj === "function"
+}
+
+PROTOTYPE.render = function(show) {
+	if(this.rendered || this.destroyed) { return this; } // If tooltip has already been rendered, exit
+
+	var self = this,
+		options = this.options,
+		cache = this.cache,
+		elements = this.elements,
+		text = options.content.text,
+		title = options.content.title,
+		button = options.content.button,
+		posOptions = options.position,
+		deferreds = [];
+
+	// Add ARIA attributes to target
+	$.attr(this.target[0], 'aria-describedby', this._id);
+
+	// Create public position object that tracks current position corners
+	cache.posClass = this._createPosClass(
+		(this.position = { my: posOptions.my, at: posOptions.at }).my
+	);
+
+	// Create tooltip element
+	this.tooltip = elements.tooltip = $('<div/>', {
+		'id': this._id,
+		'class': [ NAMESPACE, CLASS_DEFAULT, options.style.classes, cache.posClass ].join(' '),
+		'width': options.style.width || '',
+		'height': options.style.height || '',
+		'tracking': posOptions.target === 'mouse' && posOptions.adjust.mouse,
+
+		/* ARIA specific attributes */
+		'role': 'alert',
+		'aria-live': 'polite',
+		'aria-atomic': FALSE,
+		'aria-describedby': this._id + '-content',
+		'aria-hidden': TRUE
+	})
+	.toggleClass(CLASS_DISABLED, this.disabled)
+	.attr(ATTR_ID, this.id)
+	.data(NAMESPACE, this)
+	.appendTo(posOptions.container)
+	.append(
+		// Create content element
+		elements.content = $('<div />', {
+			'class': NAMESPACE + '-content',
+			'id': this._id + '-content',
+			'aria-atomic': TRUE
+		})
+	);
+
+	// Set rendered flag and prevent redundant reposition calls for now
+	this.rendered = -1;
+	this.positioning = TRUE;
+
+	// Create title...
+	if(title) {
+		this._createTitle();
+
+		// Update title only if its not a callback (called in toggle if so)
+		if(!QTip.isFunction(title)) {
+			deferreds.push( this._updateTitle(title, FALSE) );
+		}
+	}
+
+	// Create button
+	if(button) { this._createButton(); }
+
+	// Set proper rendered flag and update content if not a callback function (called in toggle)
+	if(!QTip.isFunction(text)) {
+		deferreds.push( this._updateContent(text, FALSE) );
+	}
+	this.rendered = TRUE;
+
+	// Setup widget classes
+	this._setWidget();
+
+	// Initialize 'render' plugins
+	$.each(PLUGINS, function(name) {
+		var instance;
+		if(this.initialize === 'render' && (instance = this(self))) {
+			self.plugins[name] = instance;
+		}
+	});
+
+	// Unassign initial events and assign proper events
+	this._unassignEvents();
+	this._assignEvents();
+
+	// When deferreds have completed
+	this._when(deferreds).then(function() {
+		// tooltiprender event
+		self._trigger('render');
+
+		// Reset flags
+		self.positioning = FALSE;
+
+		// Show tooltip if not hidden during wait period
+		if(!self.hiddenDuringWait && (options.show.ready || show)) {
+			self.toggle(TRUE, cache.event, FALSE);
+		}
+		self.hiddenDuringWait = FALSE;
+	});
+
+	// Expose API
+	QTIP.api[this.id] = this;
+
+	return this;
+};
+
+PROTOTYPE.destroy = function(immediate) {
+	// Set flag the signify destroy is taking place to plugins
+	// and ensure it only gets destroyed once!
+	if(this.destroyed) { return this.target; }
+
+	function process() {
+		if(this.destroyed) { return; }
+		this.destroyed = TRUE;
+
+		var target = this.target,
+			title = target.attr(oldtitle),
+			timer;
+
+		// Destroy tooltip if rendered
+		if(this.rendered) {
+			this.tooltip.stop(1,0).find('*').remove().end().remove();
+		}
+
+		// Destroy all plugins
+		$.each(this.plugins, function() {
+			this.destroy && this.destroy();
+		});
+
+		// Clear timers
+		for (timer in this.timers) {
+			if (this.timers.hasOwnProperty(timer)) {
+				clearTimeout(this.timers[timer]);
+			}
+		}
+
+		// Remove api object and ARIA attributes
+		target.removeData(NAMESPACE)
+			.removeAttr(ATTR_ID)
+			.removeAttr(ATTR_HAS)
+			.removeAttr('aria-describedby');
+
+		// Reset old title attribute if removed
+		if(this.options.suppress && title) {
+			target.attr('title', title).removeAttr(oldtitle);
+		}
+
+		// Remove qTip events associated with this API
+		this._unassignEvents();
+
+		// Remove ID from used id objects, and delete object references
+		// for better garbage collection and leak protection
+		this.options = this.elements = this.cache = this.timers =
+			this.plugins = this.mouse = NULL;
+
+		// Delete epoxsed API object
+		delete QTIP.api[this.id];
+	}
+
+	// If an immediate destroy is needed
+	if((immediate !== TRUE || this.triggering === 'hide') && this.rendered) {
+		this.tooltip.one('tooltiphidden', $.proxy(process, this));
+		!this.triggering && this.hide();
+	}
+
+	// If we're not in the process of hiding... process
+	else { process.call(this); }
+
+	return this.target;
+};
+;function invalidOpt(a) {
+	return a === NULL || typeof a !== 'object';
+}
+
+function invalidContent(c) {
+	return !(QTip.isFunction(c) ||
+            c && c.attr ||
+            c.length ||
+            typeof c === 'object' && c !== NULL && (c.jquery || c.then));
+}
+
+// Option object sanitizer
+function sanitizeOptions(opts) {
+	var content, text, ajax, once;
+
+	if(invalidOpt(opts)) { return FALSE; }
+
+	if(invalidOpt(opts.metadata)) {
+		opts.metadata = { type: opts.metadata };
+	}
+
+	if('content' in opts) {
+		content = opts.content;
+
+		if(invalidOpt(content) || content.jquery || content.done) {
+			text = invalidContent(content) ? FALSE : content;
+			content = opts.content = {
+				text: text
+			};
+		}
+		else { text = content.text; }
+
+		// DEPRECATED - Old content.ajax plugin functionality
+		// Converts it into the proper Deferred syntax
+		if('ajax' in content) {
+			ajax = content.ajax;
+			once = ajax && ajax.once !== FALSE;
+			delete content.ajax;
+
+			content.text = function(event, api) {
+				var loading = text || $(this).attr(api.options.content.attr) || 'Loading...',
+
+				deferred = $.ajax(
+					$.extend({}, ajax, { context: api })
+				)
+				.then(ajax.success, NULL, ajax.error)
+				.then(function(newContent) {
+					if(newContent && once) { api.set('content.text', newContent); }
+					return newContent;
+				},
+				function(xhr, status, error) {
+					if(api.destroyed || xhr.status === 0) { return; }
+					api.set('content.text', status + ': ' + error);
+				});
+
+				return !once ? (api.set('content.text', loading), deferred) : loading;
+			};
+		}
+
+		if('title' in content) {
+			if($.isPlainObject(content.title)) {
+				content.button = content.title.button;
+				content.title = content.title.text;
+			}
+
+			if(invalidContent(content.title || FALSE)) {
+				content.title = FALSE;
+			}
+		}
+	}
+
+	if('position' in opts && invalidOpt(opts.position)) {
+		opts.position = { my: opts.position, at: opts.position };
+	}
+
+	if('show' in opts && invalidOpt(opts.show)) {
+		opts.show = opts.show.jquery ? { target: opts.show } :
+			opts.show === TRUE ? { ready: TRUE } : { event: opts.show };
+	}
+
+	if('hide' in opts && invalidOpt(opts.hide)) {
+		opts.hide = opts.hide.jquery ? { target: opts.hide } : { event: opts.hide };
+	}
+
+	if('style' in opts && invalidOpt(opts.style)) {
+		opts.style = { classes: opts.style };
+	}
+
+	// Sanitize plugin options
+	$.each(PLUGINS, function() {
+		this.sanitize && this.sanitize(opts);
+	});
+
+	return opts;
+}
+
+// Setup builtin .set() option checks
+CHECKS = PROTOTYPE.checks = {
+	builtin: {
+		// Core checks
+		'^id$': function(obj, o, v, prev) {
+			var id = v === TRUE ? QTIP.nextid : v,
+				newId = NAMESPACE + '-' + id;
+
+			if(id !== FALSE && id.length > 0 && !$('#'+newId).length) {
+				this._id = newId;
+
+				if(this.rendered) {
+					this.tooltip[0].id = this._id;
+					this.elements.content[0].id = this._id + '-content';
+					this.elements.title[0].id = this._id + '-title';
+				}
+			}
+			else { obj[o] = prev; }
+		},
+		'^prerender': function(obj, o, v) {
+			v && !this.rendered && this.render(this.options.show.ready);
+		},
+
+		// Content checks
+		'^content.text$': function(obj, o, v) {
+			this._updateContent(v);
+		},
+		'^content.attr$': function(obj, o, v, prev) {
+			if(this.options.content.text === this.target.attr(prev)) {
+				this._updateContent( this.target.attr(v) );
+			}
+		},
+		'^content.title$': function(obj, o, v) {
+			// Remove title if content is null
+			if(!v) { return this._removeTitle(); }
+
+			// If title isn't already created, create it now and update
+			v && !this.elements.title && this._createTitle();
+			this._updateTitle(v);
+		},
+		'^content.button$': function(obj, o, v) {
+			this._updateButton(v);
+		},
+		'^content.title.(text|button)$': function(obj, o, v) {
+			this.set('content.'+o, v); // Backwards title.text/button compat
+		},
+
+		// Position checks
+		'^position.(my|at)$': function(obj, o, v){
+			if('string' === typeof v) {
+				this.position[o] = obj[o] = new CORNER(v, o === 'at');
+			}
+		},
+		'^position.container$': function(obj, o, v){
+			this.rendered && this.tooltip.appendTo(v);
+		},
+
+		// Show checks
+		'^show.ready$': function(obj, o, v) {
+			v && (!this.rendered && this.render(TRUE) || this.toggle(TRUE));
+		},
+
+		// Style checks
+		'^style.classes$': function(obj, o, v, p) {
+			this.rendered && this.tooltip.removeClass(p).addClass(v);
+		},
+		'^style.(width|height)': function(obj, o, v) {
+			this.rendered && this.tooltip.css(o, v);
+		},
+		'^style.widget|content.title': function() {
+			this.rendered && this._setWidget();
+		},
+		'^style.def': function(obj, o, v) {
+			this.rendered && this.tooltip.toggleClass(CLASS_DEFAULT, !!v);
+		},
+
+		// Events check
+		'^events.(render|show|move|hide|focus|blur)$': function(obj, o, v) {
+			this.rendered && this.tooltip[(QTip.isFunction(v) ? '' : 'un') + 'bind']('tooltip'+o, v);
+		},
+
+		// Properties which require event reassignment
+		'^(show|hide|position).(event|target|fixed|inactive|leave|distance|viewport|adjust)': function() {
+			if(!this.rendered) { return; }
+
+			// Set tracking flag
+			var posOptions = this.options.position;
+			this.tooltip.attr('tracking', posOptions.target === 'mouse' && posOptions.adjust.mouse);
+
+			// Reassign events
+			this._unassignEvents();
+			this._assignEvents();
+		}
+	}
+};
+
+// Dot notation converter
+function convertNotation(options, notation) {
+	var i = 0, obj, option = options,
+
+	// Split notation into array
+	levels = notation.split('.');
+
+	// Loop through
+	while(option = option[ levels[i++] ]) {
+		if(i < levels.length) { obj = option; }
+	}
+
+	return [obj || options, levels.pop()];
+}
+
+PROTOTYPE.get = function(notation) {
+	if(this.destroyed) { return this; }
+
+	var o = convertNotation(this.options, notation.toLowerCase()),
+		result = o[0][ o[1] ];
+
+	return result.precedance ? result.string() : result;
+};
+
+function setCallback(notation, args) {
+	var category, rule, match;
+
+	for(category in this.checks) {
+		if (!this.checks.hasOwnProperty(category)) { continue; }
+
+		for(rule in this.checks[category]) {
+			if (!this.checks[category].hasOwnProperty(rule)) { continue; }
+
+			if(match = (new RegExp(rule, 'i')).exec(notation)) {
+				args.push(match);
+
+				if(category === 'builtin' || this.plugins[category]) {
+					this.checks[category][rule].apply(
+						this.plugins[category] || this, args
+					);
+				}
+			}
+		}
+	}
+}
+
+var rmove = /^position\.(my|at|adjust|target|container|viewport)|style|content|show\.ready/i,
+	rrender = /^prerender|show\.ready/i;
+
+PROTOTYPE.set = function(option, value) {
+	if(this.destroyed) { return this; }
+
+	var rendered = this.rendered,
+		reposition = FALSE,
+		options = this.options,
+		name;
+
+	// Convert singular option/value pair into object form
+	if('string' === typeof option) {
+		name = option; option = {}; option[name] = value;
+	}
+	else { option = $.extend({}, option); }
+
+	// Set all of the defined options to their new values
+	$.each(option, function(notation, val) {
+		if(rendered && rrender.test(notation)) {
+			delete option[notation]; return;
+		}
+
+		// Set new obj value
+		var obj = convertNotation(options, notation.toLowerCase()), previous;
+		previous = obj[0][ obj[1] ];
+		obj[0][ obj[1] ] = val && val.nodeType ? $(val) : val;
+
+		// Also check if we need to reposition
+		reposition = rmove.test(notation) || reposition;
+
+		// Set the new params for the callback
+		option[notation] = [obj[0], obj[1], val, previous];
+	});
+
+	// Re-sanitize options
+	sanitizeOptions(options);
+
+	/*
+	 * Execute any valid callbacks for the set options
+	 * Also set positioning flag so we don't get loads of redundant repositioning calls.
+	 */
+	this.positioning = TRUE;
+	$.each(option, $.proxy(setCallback, this));
+	this.positioning = FALSE;
+
+	// Update position if needed
+	if(this.rendered && this.tooltip[0].offsetWidth > 0 && reposition) {
+		this.reposition( options.position.target === 'mouse' ? NULL : this.cache.event );
+	}
+
+	return this;
+};
+;PROTOTYPE._update = function(content, element) {
+	var self = this,
+		cache = this.cache;
+
+	// Make sure tooltip is rendered and content is defined. If not return
+	if(!this.rendered || !content) { return FALSE; }
+
+	// Use function to parse content
+	if(QTip.isFunction(content)) {
+		content = content.call(this.elements.target, cache.event, this) || '';
+	}
+
+	// Handle deferred content
+	if(QTip.isFunction(content.then)) {
+		cache.waiting = TRUE;
+		return content.then(function(c) {
+			cache.waiting = FALSE;
+			return self._update(c, element);
+		}, NULL, function(e) {
+			return self._update(e, element);
+		});
+	}
+
+	// If content is null... return false
+	if(content === FALSE || !content && content !== '') { return FALSE; }
+
+	// Append new content if its a DOM array and show it if hidden
+	if(content.jquery && content.length > 0) {
+		element.empty().append(
+			content.css({ display: 'block', visibility: 'visible' })
+		);
+	}
+
+	// Content is a regular string, insert the new content
+	else { element.html(content); }
+
+	// Wait for content to be loaded, and reposition
+	return this._waitForContent(element).then(function(images) {
+		if(self.rendered && self.tooltip[0].offsetWidth > 0) {
+			self.reposition(cache.event, !images.length);
+		}
+	});
+};
+
+PROTOTYPE._waitForContent = function(element) {
+	var cache = this.cache;
+
+	// Set flag
+	cache.waiting = TRUE;
+
+	// If imagesLoaded is included, ensure images have loaded and return promise
+	return ( $.fn.imagesLoaded ? element.imagesLoaded() : new $.Deferred().resolve([]) )
+		.done(function() { cache.waiting = FALSE; })
+		.promise();
+};
+
+PROTOTYPE._updateContent = function(content, reposition) {
+	this._update(content, this.elements.content, reposition);
+};
+
+PROTOTYPE._updateTitle = function(content, reposition) {
+	if(this._update(content, this.elements.title, reposition) === FALSE) {
+		this._removeTitle(FALSE);
+	}
+};
+
+PROTOTYPE._createTitle = function()
+{
+	var elements = this.elements,
+		id = this._id+'-title';
+
+	// Destroy previous title element, if present
+	if(elements.titlebar) { this._removeTitle(); }
+
+	// Create title bar and title elements
+	elements.titlebar = $('<div />', {
+		'class': NAMESPACE + '-titlebar ' + (this.options.style.widget ? createWidgetClass('header') : '')
+	})
+	.append(
+		elements.title = $('<div />', {
+			'id': id,
+			'class': NAMESPACE + '-title',
+			'aria-atomic': TRUE
+		})
+	)
+	.insertBefore(elements.content)
+
+	// Button-specific events
+	.on('mousedown keydown mouseup keyup mouseout', '.qtip-close', function(event) {
+		$(this).toggleClass('ui-state-active ui-state-focus', event.type.substr(-4) === 'down');
+	})
+	.on('mouseover mouseout', '.qtip-close', function(event){
+		$(this).toggleClass('ui-state-hover', event.type === 'mouseover');
+	});
+
+	// Create button if enabled
+	if(this.options.content.button) { this._createButton(); }
+};
+
+PROTOTYPE._removeTitle = function(reposition)
+{
+	var elements = this.elements;
+
+	if(elements.title) {
+		elements.titlebar.remove();
+		elements.titlebar = elements.title = elements.button = NULL;
+
+		// Reposition if enabled
+		if(reposition !== FALSE) { this.reposition(); }
+	}
+};
+;PROTOTYPE._createPosClass = function(my) {
+	return NAMESPACE + '-pos-' + (my || this.options.position.my).abbrev();
+};
+
+PROTOTYPE.reposition = function(event, effect) {
+	if(!this.rendered || this.positioning || this.destroyed) { return this; }
+
+	// Set positioning flag
+	this.positioning = TRUE;
+
+	var cache = this.cache,
+		tooltip = this.tooltip,
+		posOptions = this.options.position,
+		target = posOptions.target,
+		my = posOptions.my,
+		at = posOptions.at,
+		viewport = posOptions.viewport,
+		container = posOptions.container,
+		adjust = posOptions.adjust,
+		method = adjust.method.split(' '),
+		tooltipWidth = tooltip.outerWidth(FALSE),
+		tooltipHeight = tooltip.outerHeight(FALSE),
+		targetWidth = 0,
+		targetHeight = 0,
+		type = tooltip.css('position'),
+		position = { left: 0, top: 0 },
+		visible = tooltip[0].offsetWidth > 0,
+		isScroll = event && event.type === 'scroll',
+		win = $(window),
+		doc = container[0].ownerDocument,
+		mouse = this.mouse,
+		pluginCalculations, offset, adjusted, newClass;
+
+	// Check if absolute position was passed
+	if(Array.isArray(target) && target.length === 2) {
+		// Force left top and set position
+		at = { x: LEFT, y: TOP };
+		position = { left: target[0], top: target[1] };
+	}
+
+	// Check if mouse was the target
+	else if(target === 'mouse') {
+		// Force left top to allow flipping
+		at = { x: LEFT, y: TOP };
+
+		// Use the mouse origin that caused the show event, if distance hiding is enabled
+		if((!adjust.mouse || this.options.hide.distance) && cache.origin && cache.origin.pageX) {
+			event =  cache.origin;
+		}
+
+		// Use cached event for resize/scroll events
+		else if(!event || event && (event.type === 'resize' || event.type === 'scroll')) {
+			event = cache.event;
+		}
+
+		// Otherwise, use the cached mouse coordinates if available
+		else if(mouse && mouse.pageX) {
+			event = mouse;
+		}
+
+		// Calculate body and container offset and take them into account below
+		if(type !== 'static') { position = container.offset(); }
+		if(doc.body.offsetWidth !== (window.innerWidth || doc.documentElement.clientWidth)) {
+			offset = $(document.body).offset();
+		}
+
+		// Use event coordinates for position
+		position = {
+			left: event.pageX - position.left + (offset && offset.left || 0),
+			top: event.pageY - position.top + (offset && offset.top || 0)
+		};
+
+		// Scroll events are a pain, some browsers
+		if(adjust.mouse && isScroll && mouse) {
+			position.left -= (mouse.scrollX || 0) - win.scrollLeft();
+			position.top -= (mouse.scrollY || 0) - win.scrollTop();
+		}
+	}
+
+	// Target wasn't mouse or absolute...
+	else {
+		// Check if event targetting is being used
+		if(target === 'event') {
+			if(event && event.target && event.type !== 'scroll' && event.type !== 'resize') {
+				cache.target = $(event.target);
+			}
+			else if(!event.target) {
+				cache.target = this.elements.target;
+			}
+		}
+		else if(target !== 'event'){
+			cache.target = $(target.jquery ? target : this.elements.target);
+		}
+		target = cache.target;
+
+		// Parse the target into a jQuery object and make sure there's an element present
+		target = $(target).eq(0);
+		if(target.length === 0) { return this; }
+
+		// Check if window or document is the target
+		else if(target[0] === document || target[0] === window) {
+			targetWidth = BROWSER.iOS ? window.innerWidth : target.width();
+			targetHeight = BROWSER.iOS ? window.innerHeight : target.height();
+
+			if(target[0] === window) {
+				position = {
+					top: (viewport || target).scrollTop(),
+					left: (viewport || target).scrollLeft()
+				};
+			}
+		}
+
+		// Check if the target is an <AREA> element
+		else if(PLUGINS.imagemap && target.is('area')) {
+			pluginCalculations = PLUGINS.imagemap(this, target, at, PLUGINS.viewport ? method : FALSE);
+		}
+
+		// Check if the target is an SVG element
+		else if(PLUGINS.svg && target && target[0].ownerSVGElement) {
+			pluginCalculations = PLUGINS.svg(this, target, at, PLUGINS.viewport ? method : FALSE);
+		}
+
+		// Otherwise use regular jQuery methods
+		else {
+			targetWidth = target.outerWidth(FALSE);
+			targetHeight = target.outerHeight(FALSE);
+			position = target.offset();
+		}
+
+		// Parse returned plugin values into proper variables
+		if(pluginCalculations) {
+			targetWidth = pluginCalculations.width;
+			targetHeight = pluginCalculations.height;
+			offset = pluginCalculations.offset;
+			position = pluginCalculations.position;
+		}
+
+		// Adjust position to take into account offset parents
+		position = this.reposition.offset(target, position, container);
+
+		// Adjust for position.fixed tooltips (and also iOS scroll bug in v3.2-4.0 & v4.3-4.3.2)
+		if(BROWSER.iOS > 3.1 && BROWSER.iOS < 4.1 ||
+			BROWSER.iOS >= 4.3 && BROWSER.iOS < 4.33 ||
+			!BROWSER.iOS && type === 'fixed'
+		){
+			position.left -= win.scrollLeft();
+			position.top -= win.scrollTop();
+		}
+
+		// Adjust position relative to target
+		if(!pluginCalculations || pluginCalculations && pluginCalculations.adjustable !== FALSE) {
+			position.left += at.x === RIGHT ? targetWidth : at.x === CENTER ? targetWidth / 2 : 0;
+			position.top += at.y === BOTTOM ? targetHeight : at.y === CENTER ? targetHeight / 2 : 0;
+		}
+	}
+
+	// Adjust position relative to tooltip
+	position.left += adjust.x + (my.x === RIGHT ? -tooltipWidth : my.x === CENTER ? -tooltipWidth / 2 : 0);
+	position.top += adjust.y + (my.y === BOTTOM ? -tooltipHeight : my.y === CENTER ? -tooltipHeight / 2 : 0);
+
+	// Use viewport adjustment plugin if enabled
+	if(PLUGINS.viewport) {
+		adjusted = position.adjusted = PLUGINS.viewport(
+			this, position, posOptions, targetWidth, targetHeight, tooltipWidth, tooltipHeight
+		);
+
+		// Apply offsets supplied by positioning plugin (if used)
+		if(offset && adjusted.left) { position.left += offset.left; }
+		if(offset && adjusted.top) {  position.top += offset.top; }
+
+		// Apply any new 'my' position
+		if(adjusted.my) { this.position.my = adjusted.my; }
+	}
+
+	// Viewport adjustment is disabled, set values to zero
+	else { position.adjusted = { left: 0, top: 0 }; }
+
+	// Set tooltip position class if it's changed
+	if(cache.posClass !== (newClass = this._createPosClass(this.position.my))) {
+		cache.posClass = newClass;
+		tooltip.removeClass(cache.posClass).addClass(newClass);
+	}
+
+	// tooltipmove event
+	if(!this._trigger('move', [position, viewport.elem || viewport], event)) { return this; }
+	delete position.adjusted;
+
+	// If effect is disabled, target it mouse, no animation is defined or positioning gives NaN out, set CSS directly
+	if(effect === FALSE || !visible || isNaN(position.left) || isNaN(position.top) || target === 'mouse' || !QTip.isFunction(posOptions.effect)) {
+		tooltip.css(position);
+	}
+
+	// Use custom function if provided
+	else if(QTip.isFunction(posOptions.effect)) {
+		posOptions.effect.call(tooltip, this, $.extend({}, position));
+		tooltip.queue(function(next) {
+			// Reset attributes to avoid cross-browser rendering bugs
+			$(this).css({ opacity: '', height: '' });
+			if(BROWSER.ie) { this.style.removeAttribute('filter'); }
+
+			next();
+		});
+	}
+
+	// Set positioning flag
+	this.positioning = FALSE;
+
+	return this;
+};
+
+// Custom (more correct for qTip!) offset calculator
+PROTOTYPE.reposition.offset = function(elem, pos, container) {
+	if(!container[0]) { return pos; }
+
+	var ownerDocument = $(elem[0].ownerDocument),
+		quirks = !!BROWSER.ie && document.compatMode !== 'CSS1Compat',
+		parent = container[0],
+		scrolled, position, parentOffset, overflow;
+
+	function scroll(e, i) {
+		pos.left += i * e.scrollLeft();
+		pos.top += i * e.scrollTop();
+	}
+
+	// Compensate for non-static containers offset
+	do {
+		if((position = $.css(parent, 'position')) !== 'static') {
+			if(position === 'fixed') {
+				parentOffset = parent.getBoundingClientRect();
+				scroll(ownerDocument, -1);
+			}
+			else {
+				parentOffset = $(parent).position();
+				parentOffset.left += parseFloat($.css(parent, 'borderLeftWidth')) || 0;
+				parentOffset.top += parseFloat($.css(parent, 'borderTopWidth')) || 0;
+			}
+
+			pos.left -= parentOffset.left + (parseFloat($.css(parent, 'marginLeft')) || 0);
+			pos.top -= parentOffset.top + (parseFloat($.css(parent, 'marginTop')) || 0);
+
+			// If this is the first parent element with an overflow of "scroll" or "auto", store it
+			if(!scrolled && (overflow = $.css(parent, 'overflow')) !== 'hidden' && overflow !== 'visible') { scrolled = $(parent); }
+		}
+	}
+	while(parent = parent.offsetParent);
+
+	// Compensate for containers scroll if it also has an offsetParent (or in IE quirks mode)
+	if(scrolled && (scrolled[0] !== ownerDocument[0] || quirks)) {
+		scroll(scrolled, 1);
+	}
+
+	return pos;
+};
+
+// Corner class
+var C = (CORNER = PROTOTYPE.reposition.Corner = function(corner, forceY) {
+	corner = ('' + corner).replace(/([A-Z])/, ' $1').replace(/middle/gi, CENTER).toLowerCase();
+	this.x = (corner.match(/left|right/i) || corner.match(/center/) || ['inherit'])[0].toLowerCase();
+	this.y = (corner.match(/top|bottom|center/i) || ['inherit'])[0].toLowerCase();
+	this.forceY = !!forceY;
+
+	var f = corner.charAt(0);
+	this.precedance = f === 't' || f === 'b' ? Y : X;
+}).prototype;
+
+C.invert = function(z, center) {
+	this[z] = this[z] === LEFT ? RIGHT : this[z] === RIGHT ? LEFT : center || this[z];
+};
+
+C.string = function(join) {
+	var x = this.x, y = this.y;
+
+	var result = x !== y ?
+		x === 'center' || y !== 'center' && (this.precedance === Y || this.forceY) ?
+			[y,x] :
+			[x,y] :
+		[x];
+
+	return join !== false ? result.join(' ') : result;
+};
+
+C.abbrev = function() {
+	var result = this.string(false);
+	return result[0].charAt(0) + (result[1] && result[1].charAt(0) || '');
+};
+
+C.clone = function() {
+	return new CORNER( this.string(), this.forceY );
+};
+
+;
+PROTOTYPE.toggle = function(state, event) {
+	var cache = this.cache,
+		options = this.options,
+		tooltip = this.tooltip;
+
+	// Try to prevent flickering when tooltip overlaps show element
+	if(event) {
+		if((/over|enter/).test(event.type) && cache.event && (/out|leave/).test(cache.event.type) &&
+			options.show.target.add(event.target).length === options.show.target.length &&
+			tooltip.has(event.relatedTarget).length) {
+			return this;
+		}
+
+		// Cache event
+		cache.event = $.event.fix(event);
+	}
+
+	// If we're currently waiting and we've just hidden... stop it
+	this.waiting && !state && (this.hiddenDuringWait = TRUE);
+
+	// Render the tooltip if showing and it isn't already
+	if(!this.rendered) { return state ? this.render(1) : this; }
+	else if(this.destroyed || this.disabled) { return this; }
+
+	var type = state ? 'show' : 'hide',
+		opts = this.options[type],
+		posOptions = this.options.position,
+		contentOptions = this.options.content,
+		width = this.tooltip.css('width'),
+		visible = this.tooltip.is(':visible'),
+		animate = state || opts.target.length === 1,
+		sameTarget = !event || opts.target.length < 2 || cache.target[0] === event.target,
+		identicalState, allow, after;
+
+	// Detect state if valid one isn't provided
+	if((typeof state).search('boolean|number')) { state = !visible; }
+
+	// Check if the tooltip is in an identical state to the new would-be state
+	identicalState = !tooltip.is(':animated') && visible === state && sameTarget;
+
+	// Fire tooltip(show/hide) event and check if destroyed
+	allow = !identicalState ? !!this._trigger(type, [90]) : NULL;
+
+	// Check to make sure the tooltip wasn't destroyed in the callback
+	if(this.destroyed) { return this; }
+
+	// If the user didn't stop the method prematurely and we're showing the tooltip, focus it
+	if(allow !== FALSE && state) { this.focus(event); }
+
+	// If the state hasn't changed or the user stopped it, return early
+	if(!allow || identicalState) { return this; }
+
+	// Set ARIA hidden attribute
+	$.attr(tooltip[0], 'aria-hidden', !!!state);
+
+	// Execute state specific properties
+	if(state) {
+		// Store show origin coordinates
+		this.mouse && (cache.origin = $.event.fix(this.mouse));
+
+		// Update tooltip content & title if it's a dynamic function
+		if(QTip.isFunction(contentOptions.text)) { this._updateContent(contentOptions.text, FALSE); }
+		if(QTip.isFunction(contentOptions.title)) { this._updateTitle(contentOptions.title, FALSE); }
+
+		// Cache mousemove events for positioning purposes (if not already tracking)
+		if(!trackingBound && posOptions.target === 'mouse' && posOptions.adjust.mouse) {
+			$(document).on('mousemove.'+NAMESPACE, null, this._storeMouse);
+			trackingBound = TRUE;
+		}
+
+		// Update the tooltip position (set width first to prevent viewport/max-width issues)
+		if(!width) { tooltip.css('width', tooltip.outerWidth(FALSE)); }
+		this.reposition(event, arguments[2]);
+		if(!width) { tooltip.css('width', ''); }
+
+		// Hide other tooltips if tooltip is solo
+		if(!!opts.solo) {
+			(typeof opts.solo === 'string' ? $(opts.solo) : $(SELECTOR, opts.solo))
+				.not(tooltip).not(opts.target).qtip('hide', new $.Event('tooltipsolo'));
+		}
+	}
+	else {
+		// Clear show timer if we're hiding
+		clearTimeout(this.timers.show);
+
+		// Remove cached origin on hide
+		delete cache.origin;
+
+		// Remove mouse tracking event if not needed (all tracking qTips are hidden)
+		if(trackingBound && !$(SELECTOR+'[tracking="true"]:visible', opts.solo).not(tooltip).length) {
+			$(document).off('mousemove.'+NAMESPACE);
+			trackingBound = FALSE;
+		}
+
+		// Blur the tooltip
+		this.blur(event);
+	}
+
+	// Define post-animation, state specific properties
+	after = $.proxy(function() {
+		if(state) {
+			// Prevent antialias from disappearing in IE by removing filter
+			if(BROWSER.ie) { tooltip[0].style.removeAttribute('filter'); }
+
+			// Remove overflow setting to prevent tip bugs
+			tooltip.css('overflow', '');
+
+			// Autofocus elements if enabled
+			if('string' === typeof opts.autofocus) {
+				$(this.options.show.autofocus, tooltip).focus();
+			}
+
+			// If set, hide tooltip when inactive for delay period
+			this.options.show.target.trigger('qtip-'+this.id+'-inactive');
+		}
+		else {
+			// Reset CSS states
+			tooltip.css({
+				display: '',
+				visibility: '',
+				opacity: '',
+				left: '',
+				top: ''
+			});
+		}
+
+		// tooltipvisible/tooltiphidden events
+		this._trigger(state ? 'visible' : 'hidden');
+	}, this);
+
+	// If no effect type is supplied, use a simple toggle
+	if(opts.effect === FALSE || animate === FALSE) {
+		tooltip[ type ]();
+		after();
+	}
+
+	// Use custom function if provided
+	else if(QTip.isFunction(opts.effect)) {
+		tooltip.stop(1, 1);
+		opts.effect.call(tooltip, this);
+		tooltip.queue('fx', function(n) {
+			after(); n();
+		});
+	}
+
+	// Use basic fade function by default
+	else { tooltip.fadeTo(90, state ? 1 : 0, after); }
+
+	// If inactive hide method is set, active it
+	if(state) { opts.target.trigger('qtip-'+this.id+'-inactive'); }
+
+	return this;
+};
+
+PROTOTYPE.show = function(event) { return this.toggle(TRUE, event); };
+
+PROTOTYPE.hide = function(event) { return this.toggle(FALSE, event); };
+;PROTOTYPE.focus = function(event) {
+	if(!this.rendered || this.destroyed) { return this; }
+
+	var qtips = $(SELECTOR),
+		tooltip = this.tooltip,
+		curIndex = parseInt(tooltip[0].style.zIndex, 10),
+		newIndex = QTIP.zindex + qtips.length;
+
+	// Only update the z-index if it has changed and tooltip is not already focused
+	if(!tooltip.hasClass(CLASS_FOCUS)) {
+		// tooltipfocus event
+		if(this._trigger('focus', [newIndex], event)) {
+			// Only update z-index's if they've changed
+			if(curIndex !== newIndex) {
+				// Reduce our z-index's and keep them properly ordered
+				qtips.each(function() {
+					if(this.style.zIndex > curIndex) {
+						this.style.zIndex = this.style.zIndex - 1;
+					}
+				});
+
+				// Fire blur event for focused tooltip
+				qtips.filter('.' + CLASS_FOCUS).qtip('blur', event);
+			}
+
+			// Set the new z-index
+			tooltip.addClass(CLASS_FOCUS)[0].style.zIndex = newIndex;
+		}
+	}
+
+	return this;
+};
+
+PROTOTYPE.blur = function(event) {
+	if(!this.rendered || this.destroyed) { return this; }
+
+	// Set focused status to FALSE
+	this.tooltip.removeClass(CLASS_FOCUS);
+
+	// tooltipblur event
+	this._trigger('blur', [ this.tooltip.css('zIndex') ], event);
+
+	return this;
+};
+;PROTOTYPE.disable = function(state) {
+	if(this.destroyed) { return this; }
+
+	// If 'toggle' is passed, toggle the current state
+	if(state === 'toggle') {
+		state = !(this.rendered ? this.tooltip.hasClass(CLASS_DISABLED) : this.disabled);
+	}
+
+	// Disable if no state passed
+	else if('boolean' !== typeof state) {
+		state = TRUE;
+	}
+
+	if(this.rendered) {
+		this.tooltip.toggleClass(CLASS_DISABLED, state)
+			.attr('aria-disabled', state);
+	}
+
+	this.disabled = !!state;
+
+	return this;
+};
+
+PROTOTYPE.enable = function() { return this.disable(FALSE); };
+;PROTOTYPE._createButton = function()
+{
+	var self = this,
+		elements = this.elements,
+		tooltip = elements.tooltip,
+		button = this.options.content.button,
+		isString = typeof button === 'string',
+		close = isString ? button : 'Close tooltip';
+
+	if(elements.button) { elements.button.remove(); }
+
+	// Use custom button if one was supplied by user, else use default
+	if(button.jquery) {
+		elements.button = button;
+	}
+	else {
+		elements.button = $('<a />', {
+			'class': 'qtip-close ' + (this.options.style.widget ? '' : NAMESPACE+'-icon'),
+			'title': close,
+			'aria-label': close
+		})
+		.prepend(
+			$('<span />', {
+				'class': 'ui-icon ui-icon-close',
+				'html': '&times;'
+			})
+		);
+	}
+
+	// Create button and setup attributes
+	elements.button.appendTo(elements.titlebar || tooltip)
+		.attr('role', 'button')
+		.click(function(event) {
+			if(!tooltip.hasClass(CLASS_DISABLED)) { self.hide(event); }
+			return FALSE;
+		});
+};
+
+PROTOTYPE._updateButton = function(button)
+{
+	// Make sure tooltip is rendered and if not, return
+	if(!this.rendered) { return FALSE; }
+
+	var elem = this.elements.button;
+	if(button) { this._createButton(); }
+	else { elem.remove(); }
+};
+;// Widget class creator
+function createWidgetClass(cls) {
+	return WIDGET.concat('').join(cls ? '-'+cls+' ' : ' ');
+}
+
+// Widget class setter method
+PROTOTYPE._setWidget = function()
+{
+	var on = this.options.style.widget,
+		elements = this.elements,
+		tooltip = elements.tooltip,
+		disabled = tooltip.hasClass(CLASS_DISABLED);
+
+	tooltip.removeClass(CLASS_DISABLED);
+	CLASS_DISABLED = on ? 'ui-state-disabled' : 'qtip-disabled';
+	tooltip.toggleClass(CLASS_DISABLED, disabled);
+
+	tooltip.toggleClass('ui-helper-reset '+createWidgetClass(), on).toggleClass(CLASS_DEFAULT, this.options.style.def && !on);
+
+	if(elements.content) {
+		elements.content.toggleClass( createWidgetClass('content'), on);
+	}
+	if(elements.titlebar) {
+		elements.titlebar.toggleClass( createWidgetClass('header'), on);
+	}
+	if(elements.button) {
+		elements.button.toggleClass(NAMESPACE+'-icon', !on);
+	}
+};
+;function delay(callback, duration) {
+	// If tooltip has displayed, start hide timer
+	if(duration > 0) {
+		return setTimeout(
+			$.proxy(callback, this), duration
+		);
+	}
+	else{ callback.call(this); }
+}
+
+function showMethod(event) {
+	if(this.tooltip.hasClass(CLASS_DISABLED)) { return; }
+
+	// Clear hide timers
+	clearTimeout(this.timers.show);
+	clearTimeout(this.timers.hide);
+
+	// Start show timer
+	this.timers.show = delay.call(this,
+		function() { this.toggle(TRUE, event); },
+		this.options.show.delay
+	);
+}
+
+function hideMethod(event) {
+	if(this.tooltip.hasClass(CLASS_DISABLED) || this.destroyed) { return; }
+
+	// Check if new target was actually the tooltip element
+	var relatedTarget = $(event.relatedTarget),
+		ontoTooltip = relatedTarget.closest(SELECTOR)[0] === this.tooltip[0],
+		ontoTarget = relatedTarget[0] === this.options.show.target[0];
+
+	// Clear timers and stop animation queue
+	clearTimeout(this.timers.show);
+	clearTimeout(this.timers.hide);
+
+	// Prevent hiding if tooltip is fixed and event target is the tooltip.
+	// Or if mouse positioning is enabled and cursor momentarily overlaps
+	if(this !== relatedTarget[0] &&
+		(this.options.position.target === 'mouse' && ontoTooltip) ||
+		this.options.hide.fixed && (
+			(/mouse(out|leave|move)/).test(event.type) && (ontoTooltip || ontoTarget))
+		)
+	{
+		/* eslint-disable no-empty */
+		try {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+		} catch(e) {}
+		/* eslint-enable no-empty */
+
+		return;
+	}
+
+	// If tooltip has displayed, start hide timer
+	this.timers.hide = delay.call(this,
+		function() { this.toggle(FALSE, event); },
+		this.options.hide.delay,
+		this
+	);
+}
+
+function inactiveMethod(event) {
+	if(this.tooltip.hasClass(CLASS_DISABLED) || !this.options.hide.inactive) { return; }
+
+	// Clear timer
+	clearTimeout(this.timers.inactive);
+
+	this.timers.inactive = delay.call(this,
+		function(){ this.hide(event); },
+		this.options.hide.inactive
+	);
+}
+
+function repositionMethod(event) {
+	if(this.rendered && this.tooltip[0].offsetWidth > 0) { this.reposition(event); }
+}
+
+// Store mouse coordinates
+PROTOTYPE._storeMouse = function(event) {
+	(this.mouse = $.event.fix(event)).type = 'mousemove';
+	return this;
+};
+
+// Bind events
+PROTOTYPE._bind = function(targets, events, method, suffix, context) {
+	if(!targets || !method || !events.length) { return; }
+	var ns = '.' + this._id + (suffix ? '-'+suffix : '');
+	$(targets).on(
+		(events.split ? events : events.join(ns + ' ')) + ns,
+		null,
+		$.proxy(method, context || this)
+	);
+	return this;
+};
+PROTOTYPE._unbind = function(targets, suffix) {
+	targets && $(targets).off('.' + this._id + (suffix ? '-'+suffix : ''));
+	return this;
+};
+
+// Global delegation helper
+function delegate(selector, events, method) {
+	$(document.body).on(
+		(events.split ? events : events.join('.'+NAMESPACE + ' ')) + '.'+NAMESPACE,
+		selector,
+		function() {
+			var api = QTIP.api[ $.attr(this, ATTR_ID) ];
+			api && !api.disabled && method.apply(api, arguments);
+		}
+	);
+}
+// Event trigger
+PROTOTYPE._trigger = function(type, args, event) {
+	var callback = new $.Event('tooltip'+type);
+	callback.originalEvent = event && $.extend({}, event) || this.cache.event || NULL;
+
+	this.triggering = type;
+	this.tooltip.trigger(callback, [this].concat(args || []));
+	this.triggering = FALSE;
+
+	return !callback.isDefaultPrevented();
+};
+
+PROTOTYPE._bindEvents = function(showEvents, hideEvents, showTargets, hideTargets, showCallback, hideCallback) {
+	// Get tasrgets that lye within both
+	var similarTargets = showTargets.filter( hideTargets ).add( hideTargets.filter(showTargets) ),
+		toggleEvents = [];
+
+	// If hide and show targets are the same...
+	if(similarTargets.length) {
+
+		// Filter identical show/hide events
+		$.each(hideEvents, function(i, type) {
+			var showIndex = $.inArray(type, showEvents);
+
+			// Both events are identical, remove from both hide and show events
+			// and append to toggleEvents
+			showIndex > -1 && toggleEvents.push( showEvents.splice( showIndex, 1 )[0] );
+		});
+
+		// Toggle events are special case of identical show/hide events, which happen in sequence
+		if(toggleEvents.length) {
+			// Bind toggle events to the similar targets
+			this._bind(similarTargets, toggleEvents, function(event) {
+				var state = this.rendered ? this.tooltip[0].offsetWidth > 0 : false;
+				(state ? hideCallback : showCallback).call(this, event);
+			});
+
+			// Remove the similar targets from the regular show/hide bindings
+			showTargets = showTargets.not(similarTargets);
+			hideTargets = hideTargets.not(similarTargets);
+		}
+	}
+
+	// Apply show/hide/toggle events
+	this._bind(showTargets, showEvents, showCallback);
+	this._bind(hideTargets, hideEvents, hideCallback);
+};
+
+PROTOTYPE._assignInitialEvents = function(event) {
+	var options = this.options,
+		showTarget = options.show.target,
+		hideTarget = options.hide.target,
+		showEvents = options.show.event ? this.trim('' + options.show.event).split(' ') : [],
+		hideEvents = options.hide.event ? this.trim('' + options.hide.event).split(' ') : [];
+
+	// Catch remove/removeqtip events on target element to destroy redundant tooltips
+	this._bind(this.elements.target, ['remove', 'removeqtip'], function() {
+		this.destroy(true);
+	}, 'destroy');
+
+	/*
+	 * Make sure hoverIntent functions properly by using mouseleave as a hide event if
+	 * mouseenter/mouseout is used for show.event, even if it isn't in the users options.
+	 */
+	if(/mouse(over|enter)/i.test(options.show.event) && !/mouse(out|leave)/i.test(options.hide.event)) {
+		hideEvents.push('mouseleave');
+	}
+
+	/*
+	 * Also make sure initial mouse targetting works correctly by caching mousemove coords
+	 * on show targets before the tooltip has rendered. Also set onTarget when triggered to
+	 * keep mouse tracking working.
+	 */
+	this._bind(showTarget, 'mousemove', function(moveEvent) {
+		this._storeMouse(moveEvent);
+		this.cache.onTarget = TRUE;
+	});
+
+	// Define hoverIntent function
+	function hoverIntent(hoverEvent) {
+		// Only continue if tooltip isn't disabled
+		if(this.disabled || this.destroyed) { return FALSE; }
+
+		// Cache the event data
+		this.cache.event = hoverEvent && $.event.fix(hoverEvent);
+		this.cache.target = hoverEvent && $(hoverEvent.target);
+
+		// Start the event sequence
+		clearTimeout(this.timers.show);
+		this.timers.show = delay.call(this,
+			function() { this.render(typeof hoverEvent === 'object' || options.show.ready); },
+			options.prerender ? 0 : options.show.delay
+		);
+	}
+
+	// Filter and bind events
+	this._bindEvents(showEvents, hideEvents, showTarget, hideTarget, hoverIntent, function() {
+		if(!this.timers) { return FALSE; }
+		clearTimeout(this.timers.show);
+	});
+
+	// Prerendering is enabled, create tooltip now
+	if(options.show.ready || options.prerender) { hoverIntent.call(this, event); }
+};
+
+// Event assignment method
+PROTOTYPE._assignEvents = function() {
+	var self = this,
+		options = this.options,
+		posOptions = options.position,
+
+		tooltip = this.tooltip,
+		showTarget = options.show.target,
+		hideTarget = options.hide.target,
+		containerTarget = posOptions.container,
+		viewportTarget = posOptions.viewport,
+		documentTarget = $(document),
+		windowTarget = $(window),
+
+		showEvents = options.show.event ? this.trim('' + options.show.event).split(' ') : [],
+		hideEvents = options.hide.event ? this.trim('' + options.hide.event).split(' ') : [];
+
+
+	// Assign passed event callbacks
+	$.each(options.events, function(name, callback) {
+		self._bind(tooltip, name === 'toggle' ? ['tooltipshow','tooltiphide'] : ['tooltip'+name], callback, null, tooltip);
+	});
+
+	// Hide tooltips when leaving current window/frame (but not select/option elements)
+	if(/mouse(out|leave)/i.test(options.hide.event) && options.hide.leave === 'window') {
+		this._bind(documentTarget, ['mouseout', 'blur'], function(event) {
+			if(!/select|option/.test(event.target.nodeName) && !event.relatedTarget) {
+				this.hide(event);
+			}
+		});
+	}
+
+	// Enable hide.fixed by adding appropriate class
+	if(options.hide.fixed) {
+		hideTarget = hideTarget.add( tooltip.addClass(CLASS_FIXED) );
+	}
+
+	/*
+	 * Make sure hoverIntent functions properly by using mouseleave to clear show timer if
+	 * mouseenter/mouseout is used for show.event, even if it isn't in the users options.
+	 */
+	else if(/mouse(over|enter)/i.test(options.show.event)) {
+		this._bind(hideTarget, 'mouseleave', function() {
+			clearTimeout(this.timers.show);
+		});
+	}
+
+	// Hide tooltip on document mousedown if unfocus events are enabled
+	if(('' + options.hide.event).indexOf('unfocus') > -1) {
+		this._bind(containerTarget.closest('html'), ['mousedown', 'touchstart'], function(event) {
+			var elem = $(event.target),
+				enabled = this.rendered && !this.tooltip.hasClass(CLASS_DISABLED) && this.tooltip[0].offsetWidth > 0,
+				isAncestor = elem.parents(SELECTOR).filter(this.tooltip[0]).length > 0;
+
+			if(elem[0] !== this.target[0] && elem[0] !== this.tooltip[0] && !isAncestor &&
+				!this.target.has(elem[0]).length && enabled
+			) {
+				this.hide(event);
+			}
+		});
+	}
+
+	// Check if the tooltip hides when inactive
+	if('number' === typeof options.hide.inactive) {
+		// Bind inactive method to show target(s) as a custom event
+		this._bind(showTarget, 'qtip-'+this.id+'-inactive', inactiveMethod, 'inactive');
+
+		// Define events which reset the 'inactive' event handler
+		this._bind(hideTarget.add(tooltip), QTIP.inactiveEvents, inactiveMethod);
+	}
+
+	// Filter and bind events
+	this._bindEvents(showEvents, hideEvents, showTarget, hideTarget, showMethod, hideMethod);
+
+	// Mouse movement bindings
+	this._bind(showTarget.add(tooltip), 'mousemove', function(event) {
+		// Check if the tooltip hides when mouse is moved a certain distance
+		if('number' === typeof options.hide.distance) {
+			var origin = this.cache.origin || {},
+				limit = this.options.hide.distance,
+				abs = Math.abs;
+
+			// Check if the movement has gone beyond the limit, and hide it if so
+			if(abs(event.pageX - origin.pageX) >= limit || abs(event.pageY - origin.pageY) >= limit) {
+				this.hide(event);
+			}
+		}
+
+		// Cache mousemove coords on show targets
+		this._storeMouse(event);
+	});
+
+	// Mouse positioning events
+	if(posOptions.target === 'mouse') {
+		// If mouse adjustment is on...
+		if(posOptions.adjust.mouse) {
+			// Apply a mouseleave event so we don't get problems with overlapping
+			if(options.hide.event) {
+				// Track if we're on the target or not
+				this._bind(showTarget, ['mouseenter', 'mouseleave'], function(event) {
+					if(!this.cache) {return FALSE; }
+					this.cache.onTarget = event.type === 'mouseenter';
+				});
+			}
+
+			// Update tooltip position on mousemove
+			this._bind(documentTarget, 'mousemove', function(event) {
+				// Update the tooltip position only if the tooltip is visible and adjustment is enabled
+				if(this.rendered && this.cache.onTarget && !this.tooltip.hasClass(CLASS_DISABLED) && this.tooltip[0].offsetWidth > 0) {
+					this.reposition(event);
+				}
+			});
+		}
+	}
+
+	// Adjust positions of the tooltip on window resize if enabled
+	if(posOptions.adjust.resize || viewportTarget.length) {
+		this._bind( $.event.special.resize ? viewportTarget : windowTarget, 'resize', repositionMethod );
+	}
+
+	// Adjust tooltip position on scroll of the window or viewport element if present
+	if(posOptions.adjust.scroll) {
+		this._bind( windowTarget.add(posOptions.container), 'scroll', repositionMethod );
+	}
+};
+
+// Un-assignment method
+PROTOTYPE._unassignEvents = function() {
+	var options = this.options,
+		showTargets = options.show.target,
+		hideTargets = options.hide.target,
+		targets = $.grep([
+			this.elements.target[0],
+			this.rendered && this.tooltip[0],
+			options.position.container[0],
+			options.position.viewport[0],
+			options.position.container.closest('html')[0], // unfocus
+			window,
+			document
+		], function(i) {
+			return typeof i === 'object';
+		});
+
+	// Add show and hide targets if they're valid
+	if(showTargets && showTargets.toArray) {
+		targets = targets.concat(showTargets.toArray());
+	}
+	if(hideTargets && hideTargets.toArray) {
+		targets = targets.concat(hideTargets.toArray());
+	}
+
+	// Unbind the events
+	this._unbind(targets)
+		._unbind(targets, 'destroy')
+		._unbind(targets, 'inactive');
+};
+
+// Apply common event handlers using delegate (avoids excessive .bind calls!)
+$(function() {
+	delegate(SELECTOR, ['mouseenter', 'mouseleave'], function(event) {
+		var state = event.type === 'mouseenter',
+			tooltip = $(event.currentTarget),
+			target = $(event.relatedTarget || event.target),
+			options = this.options;
+
+		// On mouseenter...
+		if(state) {
+			// Focus the tooltip on mouseenter (z-index stacking)
+			this.focus(event);
+
+			// Clear hide timer on tooltip hover to prevent it from closing
+			tooltip.hasClass(CLASS_FIXED) && !tooltip.hasClass(CLASS_DISABLED) && clearTimeout(this.timers.hide);
+		}
+
+		// On mouseleave...
+		else {
+			// When mouse tracking is enabled, hide when we leave the tooltip and not onto the show target (if a hide event is set)
+			if(options.position.target === 'mouse' && options.position.adjust.mouse &&
+				options.hide.event && options.show.target && !target.closest(options.show.target[0]).length) {
+				this.hide(event);
+			}
+		}
+
+		// Add hover class
+		tooltip.toggleClass(CLASS_HOVER, state);
+	});
+
+	// Define events which reset the 'inactive' event handler
+	delegate('['+ATTR_ID+']', INACTIVE_EVENTS, inactiveMethod);
+});
+;// Initialization method
+function init(elem, id, opts) {
+	var obj, posOptions, attr, config, title,
+
+	// Setup element references
+	docBody = $(document.body),
+
+	// Use document body instead of document element if needed
+	newTarget = elem[0] === document ? docBody : elem,
+
+	// Grab metadata from element if plugin is present
+	metadata = elem.metadata ? elem.metadata(opts.metadata) : NULL,
+
+	// If metadata type if HTML5, grab 'name' from the object instead, or use the regular data object otherwise
+	metadata5 = opts.metadata.type === 'html5' && metadata ? metadata[opts.metadata.name] : NULL,
+
+	// Grab data from metadata.name (or data-qtipopts as fallback) using .data() method,
+	html5 = elem.data(opts.metadata.name || 'qtipopts');
+
+	// If we don't get an object returned attempt to parse it manualyl without parseJSON
+	/* eslint-disable no-empty */
+	try { html5 = typeof html5 === 'string' ? $.parseJSON(html5) : html5; }
+	catch(e) {}
+	/* eslint-enable no-empty */
+
+	// Merge in and sanitize metadata
+	config = $.extend(TRUE, {}, QTIP.defaults, opts,
+		typeof html5 === 'object' ? sanitizeOptions(html5) : NULL,
+		sanitizeOptions(metadata5 || metadata));
+
+	// Re-grab our positioning options now we've merged our metadata and set id to passed value
+	posOptions = config.position;
+	config.id = id;
+
+	// Setup missing content if none is detected
+	if('boolean' === typeof config.content.text) {
+		attr = elem.attr(config.content.attr);
+
+		// Grab from supplied attribute if available
+		if(config.content.attr !== FALSE && attr) { config.content.text = attr; }
+
+		// No valid content was found, abort render
+		else { return FALSE; }
+	}
+
+	// Setup target options
+	if(!posOptions.container.length) { posOptions.container = docBody; }
+	if(posOptions.target === FALSE) { posOptions.target = newTarget; }
+	if(config.show.target === FALSE) { config.show.target = newTarget; }
+	if(config.show.solo === TRUE) { config.show.solo = posOptions.container.closest('body'); }
+	if(config.hide.target === FALSE) { config.hide.target = newTarget; }
+	if(config.position.viewport === TRUE) { config.position.viewport = posOptions.container; }
+
+	// Ensure we only use a single container
+	posOptions.container = posOptions.container.eq(0);
+
+	// Convert position corner values into x and y strings
+	posOptions.at = new CORNER(posOptions.at, TRUE);
+	posOptions.my = new CORNER(posOptions.my);
+
+	// Destroy previous tooltip if overwrite is enabled, or skip element if not
+	if(elem.data(NAMESPACE)) {
+		if(config.overwrite) {
+			elem.qtip('destroy', true);
+		}
+		else if(config.overwrite === FALSE) {
+			return FALSE;
+		}
+	}
+
+	// Add has-qtip attribute
+	elem.attr(ATTR_HAS, id);
+
+	// Remove title attribute and store it if present
+	if(config.suppress && (title = elem.attr('title'))) {
+		// Final attr call fixes event delegatiom and IE default tooltip showing problem
+		elem.removeAttr('title').attr(oldtitle, title).attr('title', '');
+	}
+
+	// Initialize the tooltip and add API reference
+	obj = new QTip(elem, config, id, !!attr);
+	elem.data(NAMESPACE, obj);
+
+	return obj;
+}
+
+// jQuery $.fn extension method
+QTIP = $.fn.qtip = function(options, notation, newValue)
+{
+	var command = ('' + options).toLowerCase(), // Parse command
+		returned = NULL,
+		args = $.makeArray(arguments).slice(1),
+		event = args[args.length - 1],
+		opts = this[0] ? $.data(this[0], NAMESPACE) : NULL;
+
+	// Check for API request
+	if(!arguments.length && opts || command === 'api') {
+		return opts;
+	}
+
+	// Execute API command if present
+	else if('string' === typeof options) {
+		this.each(function() {
+			var api = $.data(this, NAMESPACE);
+			if(!api) { return TRUE; }
+
+			// Cache the event if possible
+			if(event && event.timeStamp) { api.cache.event = event; }
+
+			// Check for specific API commands
+			if(notation && (command === 'option' || command === 'options')) {
+				if(newValue !== undefined || $.isPlainObject(notation)) {
+					api.set(notation, newValue);
+				}
+				else {
+					returned = api.get(notation);
+					return FALSE;
+				}
+			}
+
+			// Execute API command
+			else if(api[command]) {
+				api[command].apply(api, args);
+			}
+		});
+
+		return returned !== NULL ? returned : this;
+	}
+
+	// No API commands. validate provided options and setup qTips
+	else if('object' === typeof options || !arguments.length) {
+		// Sanitize options first
+		opts = sanitizeOptions($.extend(TRUE, {}, options));
+
+		return this.each(function(i) {
+			var api, id;
+
+			// Find next available ID, or use custom ID if provided
+			id = Array.isArray(opts.id) ? opts.id[i] : opts.id;
+			id = !id || id === FALSE || id.length < 1 || QTIP.api[id] ? QTIP.nextid++ : id;
+
+			// Initialize the qTip and re-grab newly sanitized options
+			api = init($(this), id, opts);
+			if(api === FALSE) { return TRUE; }
+			else { QTIP.api[id] = api; }
+
+			// Initialize plugins
+			$.each(PLUGINS, function() {
+				if(this.initialize === 'initialize') { this(api); }
+			});
+
+			// Assign initial pre-render events
+			api._assignInitialEvents(event);
+		});
+	}
+};
+
+// Expose class
+$.qtip = QTip;
+
+// Populated in render method
+QTIP.api = {};
+;$.each({
+	/* Allow other plugins to successfully retrieve the title of an element with a qTip applied */
+	attr: function(attr, val) {
+		if(this.length) {
+			var self = this[0],
+				title = 'title',
+				api = $.data(self, 'qtip');
+
+			if(attr === title && api && api.options && 'object' === typeof api && 'object' === typeof api.options && api.options.suppress) {
+				if(arguments.length < 2) {
+					return $.attr(self, oldtitle);
+				}
+
+				// If qTip is rendered and title was originally used as content, update it
+				if(api && api.options.content.attr === title && api.cache.attr) {
+					api.set('content.text', val);
+				}
+
+				// Use the regular attr method to set, then cache the result
+				return this.attr(oldtitle, val);
+			}
+		}
+
+		return $.fn['attr'+replaceSuffix].apply(this, arguments);
+	},
+
+	/* Allow clone to correctly retrieve cached title attributes */
+	clone: function(keepData) {
+		// Clone our element using the real clone method
+		var elems = $.fn['clone'+replaceSuffix].apply(this, arguments);
+
+		// Grab all elements with an oldtitle set, and change it to regular title attribute, if keepData is false
+		if(!keepData) {
+			elems.filter('['+oldtitle+']').attr('title', function() {
+				return $.attr(this, oldtitle);
+			})
+			.removeAttr(oldtitle);
+		}
+
+		return elems;
+	}
+}, function(name, func) {
+	if(!func || $.fn[name+replaceSuffix]) { return TRUE; }
+
+	var old = $.fn[name+replaceSuffix] = $.fn[name];
+	$.fn[name] = function() {
+		return func.apply(this, arguments) || old.apply(this, arguments);
+	};
+});
+
+/* Fire off 'removeqtip' handler in $.cleanData if jQuery UI not present (it already does similar).
+ * This snippet is taken directly from jQuery UI source code found here:
+ *     http://code.jquery.com/ui/jquery-ui-git.js
+ */
+if(!$.ui) {
+	$['cleanData'+replaceSuffix] = $.cleanData;
+	$.cleanData = function( elems ) {
+		for(var i = 0, elem; (elem = $( elems[i] )).length; i++) {
+			if(elem.attr(ATTR_HAS)) {
+				/* eslint-disable no-empty */
+				try { elem.triggerHandler('removeqtip'); }
+				catch( e ) {}
+				/* eslint-enable no-empty */
+			}
+		}
+		$['cleanData'+replaceSuffix].apply(this, arguments);
+	};
+}
+;// qTip version
+QTIP.version = '3.0.3';
+
+// Base ID for all qTips
+QTIP.nextid = 0;
+
+// Inactive events array
+QTIP.inactiveEvents = INACTIVE_EVENTS;
+
+// Base z-index for all qTips
+QTIP.zindex = 15000;
+
+// Define configuration defaults
+QTIP.defaults = {
+	prerender: FALSE,
+	id: FALSE,
+	overwrite: TRUE,
+	suppress: TRUE,
+	content: {
+		text: TRUE,
+		attr: 'title',
+		title: FALSE,
+		button: FALSE
+	},
+	position: {
+		my: 'top left',
+		at: 'bottom right',
+		target: FALSE,
+		container: FALSE,
+		viewport: FALSE,
+		adjust: {
+			x: 0, y: 0,
+			mouse: TRUE,
+			scroll: TRUE,
+			resize: TRUE,
+			method: 'flipinvert flipinvert'
+		},
+		effect: function(api, pos) {
+			$(this).animate(pos, {
+				duration: 200,
+				queue: FALSE
+			});
+		}
+	},
+	show: {
+		target: FALSE,
+		event: 'mouseenter',
+		effect: TRUE,
+		delay: 90,
+		solo: FALSE,
+		ready: FALSE,
+		autofocus: FALSE
+	},
+	hide: {
+		target: FALSE,
+		event: 'mouseleave',
+		effect: TRUE,
+		delay: 0,
+		fixed: FALSE,
+		inactive: FALSE,
+		leave: 'window',
+		distance: FALSE
+	},
+	style: {
+		classes: '',
+		widget: FALSE,
+		width: FALSE,
+		height: FALSE,
+		def: TRUE
+	},
+	events: {
+		render: NULL,
+		move: NULL,
+		show: NULL,
+		hide: NULL,
+		toggle: NULL,
+		visible: NULL,
+		hidden: NULL,
+		focus: NULL,
+		blur: NULL
+	}
+};
+;PLUGINS.viewport = function(api, position, posOptions, targetWidth, targetHeight, elemWidth, elemHeight)
+{
+	var target = posOptions.target,
+		tooltip = api.elements.tooltip,
+		my = posOptions.my,
+		at = posOptions.at,
+		adjust = posOptions.adjust,
+		method = adjust.method.split(' '),
+		methodX = method[0],
+		methodY = method[1] || method[0],
+		viewport = posOptions.viewport,
+		container = posOptions.container,
+		adjusted = { left: 0, top: 0 },
+		fixed, newMy, containerOffset, containerStatic,
+		viewportWidth, viewportHeight, viewportScroll, viewportOffset;
+
+	// If viewport is not a jQuery element, or it's the window/document, or no adjustment method is used... return
+	if(!viewport.jquery || target[0] === window || target[0] === document.body || adjust.method === 'none') {
+		return adjusted;
+	}
+
+	// Cach container details
+	containerOffset = container.offset() || adjusted;
+	containerStatic = container.css('position') === 'static';
+
+	// Cache our viewport details
+	fixed = tooltip.css('position') === 'fixed';
+	viewportWidth = viewport[0] === window ? viewport.width() : viewport.outerWidth(FALSE);
+	viewportHeight = viewport[0] === window ? viewport.height() : viewport.outerHeight(FALSE);
+	viewportScroll = { left: fixed ? 0 : viewport.scrollLeft(), top: fixed ? 0 : viewport.scrollTop() };
+	viewportOffset = viewport.offset() || adjusted;
+
+	// Generic calculation method
+	function calculate(side, otherSide, type, adjustment, side1, side2, lengthName, targetLength, elemLength) {
+		var initialPos = position[side1],
+			mySide = my[side],
+			atSide = at[side],
+			isShift = type === SHIFT,
+			myLength = mySide === side1 ? elemLength : mySide === side2 ? -elemLength : -elemLength / 2,
+			atLength = atSide === side1 ? targetLength : atSide === side2 ? -targetLength : -targetLength / 2,
+			sideOffset = viewportScroll[side1] + viewportOffset[side1] - (containerStatic ? 0 : containerOffset[side1]),
+			overflow1 = sideOffset - initialPos,
+			overflow2 = initialPos + elemLength - (lengthName === WIDTH ? viewportWidth : viewportHeight) - sideOffset,
+			offset = myLength - (my.precedance === side || mySide === my[otherSide] ? atLength : 0) - (atSide === CENTER ? targetLength / 2 : 0);
+
+		// shift
+		if(isShift) {
+			offset = (mySide === side1 ? 1 : -1) * myLength;
+
+			// Adjust position but keep it within viewport dimensions
+			position[side1] += overflow1 > 0 ? overflow1 : overflow2 > 0 ? -overflow2 : 0;
+			position[side1] = Math.max(
+				-containerOffset[side1] + viewportOffset[side1],
+				initialPos - offset,
+				Math.min(
+					Math.max(
+						-containerOffset[side1] + viewportOffset[side1] + (lengthName === WIDTH ? viewportWidth : viewportHeight),
+						initialPos + offset
+					),
+					position[side1],
+
+					// Make sure we don't adjust complete off the element when using 'center'
+					mySide === 'center' ? initialPos - myLength : 1E9
+				)
+			);
+
+		}
+
+		// flip/flipinvert
+		else {
+			// Update adjustment amount depending on if using flipinvert or flip
+			adjustment *= type === FLIPINVERT ? 2 : 0;
+
+			// Check for overflow on the left/top
+			if(overflow1 > 0 && (mySide !== side1 || overflow2 > 0)) {
+				position[side1] -= offset + adjustment;
+				newMy.invert(side, side1);
+			}
+
+			// Check for overflow on the bottom/right
+			else if(overflow2 > 0 && (mySide !== side2 || overflow1 > 0)  ) {
+				position[side1] -= (mySide === CENTER ? -offset : offset) + adjustment;
+				newMy.invert(side, side2);
+			}
+
+			// Make sure we haven't made things worse with the adjustment and reset if so
+			if(position[side1] < viewportScroll[side1] && -position[side1] > overflow2) {
+				position[side1] = initialPos; newMy = my.clone();
+			}
+		}
+
+		return position[side1] - initialPos;
+	}
+
+	// Set newMy if using flip or flipinvert methods
+	if(methodX !== 'shift' || methodY !== 'shift') { newMy = my.clone(); }
+
+	// Adjust position based onviewport and adjustment options
+	adjusted = {
+		left: methodX !== 'none' ? calculate( X, Y, methodX, adjust.x, LEFT, RIGHT, WIDTH, targetWidth, elemWidth ) : 0,
+		top: methodY !== 'none' ? calculate( Y, X, methodY, adjust.y, TOP, BOTTOM, HEIGHT, targetHeight, elemHeight ) : 0,
+		my: newMy
+	};
+
+	return adjusted;
+};
+;}));
+}( window, document ));

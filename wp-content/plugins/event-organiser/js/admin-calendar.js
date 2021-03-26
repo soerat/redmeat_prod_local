@@ -40,30 +40,7 @@ eventorganiser.versionCompare = function(left, right) {
 
 
 (function ($) {
-	 /**Parses string formatted as YYYY-MM-DD to a Date object.
-	  * If the supplied string does not match the format, an 
-	  * invalid Date (value NaN) is returned.
-	  * Used as a workaround for IE7/8 difficulities.
-	  * @link http://stackoverflow.com/questions/2182246/javascript-dates-in-ie-nan-firefox-chrome-ok
-	  * @param {string} dateStringInRange format YYYY-MM-DD, with year in
-	  * range of 0000-9999, inclusive.
-	  * @return {Date} Date object representing the string.
-	  */
-	  function eventorganiser_parseISO8601( dateStringInRange ) {
-	    var isoExp = /^\s*(\d{4})-(\d\d)-(\d\d)\s*$/,
-	        date = new Date(NaN), month,
-	        parts = isoExp.exec(dateStringInRange);
 
-	    if( parts ) {
-	      month = +parts[2];
-	      date.setFullYear( parts[1], month - 1, parts[3] );
-	      if( month != date.getMonth() + 1 ) {
-	        date.setTime( NaN );
-	      }
-	    }
-	    return date;
-	  }
-	  
     $(document).ready(function () {
 	
 	/* Calendar Dialogs */
@@ -72,259 +49,372 @@ eventorganiser.versionCompare = function(left, right) {
 		autoOpen: false,
 		dialogClass: 'eo-admin-calendar-dialog',
 		width: 527,
-		modal:true
+		modal:true,
+		closeText: 'Close modal',
+		draggable: false,
+		open: function( event, ui ) {
+			$(this).parent('.eo-admin-calendar-dialog').focus();
+		}
 	});
+	//Add eo-ui-button to jQuery UI button
+	$('.eo-dialog').parent().find('.ui-dialog-titlebar-close').addClass('eo-ui-button');
 	$('#events-meta').parent().find('.ui-dialog-titlebar-close').appendTo('.ui-tabs-nav').closest('.ui-dialog').children('.ui-dialog-titlebar').remove();
 
 	/* Time Format from screen option */
-	var format = ($('#eofc_time_format').is(":checked") ? 'HH:mm' : 'h:mmtt');
+	var format = ($('#eofc_time_format').is(":checked") ? 'HH:mm' : 'h:mma');
     
-	var initial_date = eventorganiser_parseISO8601( jQuery.cookie('eo_admin_cal_last_viewed_date') );
-	
-    //Invalid dates cause trouble in IE7&8 https://github.com/stephenharris/Event-Organiser/issues/96
-    //Check date is valid: http://stackoverflow.com/questions/1353684/
-	if ( Object.prototype.toString.call( initial_date  ) === "[object Date]" ) {
-		if ( isNaN( initial_date.getTime() ) ) {
-				//not valid
-				initial_date = new Date();
-		} else {
-				//Is valid date
-		}
-	} else {
-		//not valid;
-		initial_date = new Date();
-	}
-
 	/* Calendar */
-        var calendar = jQuery('#eo_admin_calendar').fullCalendar({
+	var calendar = jQuery('#eo_admin_calendar').fullCalendar({
 		firstDay: parseInt(EO_Ajax.startday,10),
-		date: initial_date.getDate(),
-		month: initial_date.getMonth(),
-		year: initial_date.getFullYear(),
+		defaultDate: moment( $.cookie('eo_admin_cal_last_viewed_date') ),
 		defaultView: ($.cookie('eo_admin_cal_last_view') ? $.cookie('eo_admin_cal_last_view') : 'month'),
-		editable: false,
+		editable: EO_Ajax.perm_edit,
+		eventDurationEditable: false,
+		eventStartEditable: EO_Ajax.edit_time,
+		durationEditable: false,
+		snapDuration:'00:05:00',
+		slotDuration:'00:15:00',
+		eventDrop: function( event, dayDelta, revertFunc, jsEvent, ui, view ) {
+			
+			if ( ! event.end ) {
+				alert( 'Changing the event duration is not supported' );
+				revertFunc();
+				return;
+			}
+			
+            $.ajax({
+            	type: "POST",
+            	url: EO_Ajax.ajaxurl,
+            	data:{
+            		action: 'eofc-edit-date',
+            		start: event.start.format( 'YYYY-MM-DD HH:mm:ss' ),
+            		end: event.end.format( 'YYYY-MM-DD HH:mm:ss' ),
+            		event_id: event.event_id,
+            		occurrence_id: event.occurrence_id,
+            		_wpnonce: EO_Ajax.edit_nonce,
+            	}, 
+            	dataType: 'json' 
+            })
+            .done( function( response ){
+            	if( response.success !== true ){
+            		alert( response.data.message );
+            		revertFunc();
+            	}
+            })
+            .fail( function( jqXHR, textStatus, errorMessage ) {
+            	alert( 'Error: ' + errorMessage );
+            	revertFunc();		
+            });
+		},
 		lazyFetching: 'true',
 		eventColor: '#21759B',
-		theme: true,
+		theme: false,
 		customButtons:{
 			category:  eventorganiser_cat_dropdown,
-			venue:  eventorganiser_venue_dropdown,
+			venue:  ( EO_Ajax.venues !== '' ? eventorganiser_venue_dropdown : null ),
 			'goto': eventorganiser_mini_calendar
 		},
 		buttonText: {
 			today: EO_Ajax.locale.today,
-			 month: EO_Ajax.locale.month,
+			month: EO_Ajax.locale.month,
 			week: EO_Ajax.locale.week,
 			day: EO_Ajax.locale.day,
 			cat: EO_Ajax.locale.cat,
-			venue: EO_Ajax.locale.venue
+			venue: EO_Ajax.locale.venue,
+			prev: '<',
+			next: '>'
 		},
 		monthNames: EO_Ajax.locale.monthNames,
 		monthNamesShort: EO_Ajax.locale.monthAbbrev,
 		dayNames: EO_Ajax.locale.dayNames,
 		dayNamesShort: EO_Ajax.locale.dayAbbrev,
+		isRTL: EO_Ajax.locale.isrtl,
 		header: {
 			left: 'title',
-                	center: 'category venue',
-                	right: 'prev goto today next'
+			center: 'category venue',
+			right: 'prev goto today next'
 		},
 		buttonIcons: false,
 		buttonui: true,
-		events: function (start, end, callback) {
-                	jQuery.ajax({
+		events: function (start, end, timezone, callback) {
+			jQuery.ajax({
 				url: EO_Ajax.ajaxurl + "?action=event-admin-cal",
-                    		dataType: 'JSON',
+				dataType: 'JSON',
 				data: {
-					start: jQuery.fullCalendar.formatDate(start, 'yyyy-MM-dd'),
-					end: jQuery.fullCalendar.formatDate(end, 'yyyy-MM-dd')
-                    		},
-                    		success: function (data) {
-                        		callback(data)
-                    		}
-                	})
+					start: start.format( 'YYYY-MM-DD' ),
+					end:   end.format( 'YYYY-MM-DD' )
+				},
+				success: callback,
+            });
 		},
 		categories: EO_Ajax.categories,
 		venues: EO_Ajax.venues,
 		selectable: true,
 		selectHelper: true,
 		eventRender: function (event, element) {
-			var cat = jQuery(".filter-category .eo-cal-filter").val();
-                	var venue = jQuery(".filter-venue .eo-cal-filter").val();
-                	if (typeof cat !== "undefined" && cat != '' && (jQuery.inArray(cat, event.category) < 0)) {
-                    		return '<div></div>'
-                	}
-                	if (typeof venue !== "undefined" && venue != '' && venue != event.venue) {
-                    		return '<div></div>'
-                	}
+			var cat   = jQuery(".filter-category .eo-cal-filter").val();
+			var venue = jQuery(".filter-venue .eo-cal-filter").val();
+			if ( typeof cat !== "undefined" && cat !== '' && (jQuery.inArray(cat, event.category) < 0)) {
+				return '<div></div>';
+			}
+			if ( typeof venue !== "undefined" && venue !== '' && venue != event.venue) {
+				return '<div></div>';
+			}
 		},
-		viewDisplay: function (element) {
-			var date = jQuery.fullCalendar.formatDate( element.start,'yyyy-MM-dd');
-			var view = element.name;
-
+		viewRender: function ( view, element ) {
+			var date = view.intervalStart.format( 'YYYY-MM-DD' );
 			//Expire cooke after 10 minutes
 			var expires_date = new Date();
 			expires_date = new Date(expires_date.getTime() + (10 * 60 * 1000));			
 			$.cookie('eo_admin_cal_last_viewed_date', date,{ expires: expires_date });
-			$.cookie('eo_admin_cal_last_view', view,{ expires: expires_date });
-    		},
+			$.cookie('eo_admin_cal_last_view', view.name,{ expires: expires_date });
+		},
 		weekMode: 'variable',
-		aspectRatio: 1.50,
 		loading: function (bool) {
 			if (bool) jQuery('#loading').show();
 			else jQuery('#loading').hide();
 		},
-		timeFormat:format,
+		timeFormat: format,
 		axisFormat: format,
 		eventClick: function (event, jsevent, view) {
-                	jsevent.preventDefault();
-			jQuery("#eo-dialog-tabs ul li").each(function(){
+			jsevent.preventDefault();
+			$("#eo-dialog-tabs ul li").each(function(){
 				var id = $(this).attr('id').substring(14);
-	                	jQuery("#eo-dialog-tabs #"+$(this).attr('id')+'-content').html(event[id]);
+				$("#eo-dialog-tabs #"+$(this).attr('id')+'-content').html(event[id]);
 			});
-
 			$('#events-meta').dialog('open');
 		},
-		select: function (startDate, endDate, allDay, jsEvent, view) {
-                	if (EO_Ajax.perm_edit) {
+		select: function ( startDate, endDate, jsEvent, view ){
+			if ( EO_Ajax.perm_edit ){
 				jsEvent.preventDefault();
-				var fc_format = 'yyyy-MM-dd';
 				var options = jQuery(this)[0].calendar.options;
-				var start_date = jQuery.fullCalendar.formatDate(startDate, fc_format);
-				var start_time = jQuery.fullCalendar.formatDate(startDate, 'HH:mm');
-				var end_date = jQuery.fullCalendar.formatDate(endDate, fc_format);
-				var end_time = jQuery.fullCalendar.formatDate(endDate, 'HH:mm');
-				var the_date;
-				if ( allDay ) {
-					format = 'ddd, dS MMMM';
+				
+				var start_date = startDate.format( 'YYYY-MM-DD' );
+				var start_time = startDate.format( 'HH:mm' );
+				
+				if ( !startDate.hasTime() ) {
+					endDate.subtract(1, 'minute');
+					format = 'ddd, Do MMMM';
 					allDay = 1;
 				} else {
-					format = 'ddd, dS MMMM h(:mm)tt';
+					format = 'ddd, Do MMMM h:mma';
 					allDay = 0;
 				}
-                    		
-				if (start_date == end_date) {
-					the_date = jQuery.fullCalendar.formatDate(startDate, format, options);
-					if (!allDay) {
-						the_date = the_date + ' &mdash; ' + jQuery.fullCalendar.formatDate(endDate, 'h(:mm)tt', options );
-					}
-				} else {
-					the_date = jQuery.fullCalendar.formatDate(startDate, format, options) + ' &mdash; ' + jQuery.fullCalendar.formatDate( endDate, format, options );
-				}
 				
+				var end_date   = endDate.format( 'YYYY-MM-DD' );
+				var end_time   = endDate.format( 'HH:mm' );
+
+				var the_date = $.fullCalendar.formatRange( startDate, endDate, format );
+						
 				$("#eo_event_create_cal input[name='eo_event[event_title]']").val('');
 				$("#eo_event_create_cal input.ui-autocomplete-input").val('');
 				$("#eo_event_create_cal textarea[name='eo_event[event_content]']").val('');
-    			$("#eo_event_create_cal input[name='eo_event[StartDate]']").val(start_date);
-    			$("#eo_event_create_cal input[name='eo_event[StartTime]']").val(start_time);
-    			$("#eo_event_create_cal input[name='eo_event[EndDate]']").val(end_date);
+				$("#eo_event_create_cal input[name='eo_event[StartDate]']").val(start_date);
+				$("#eo_event_create_cal input[name='eo_event[StartTime]']").val(start_time);
+				$("#eo_event_create_cal input[name='eo_event[EndDate]']").val(end_date);
 				$("#eo_event_create_cal input[name='eo_event[FinishTime]']").val(end_time);
-    			$("#eo_event_create_cal input[name='eo_event[allday]']").val(allDay);
-    			$("#eo_event_create_cal td#date").html(the_date);
-    			$('#eo_event_create_cal').dialog('open');
-    			$("form.eo_cal input[type='submit']").removeAttr('disabled');
-    			$("form.eo_cal input#reset").click(function (event) {
-        			$('#eo_event_create_cal').dialog('close');
-        		});
-    		}
+				$("#eo_event_create_cal input[name='eo_event[allday]']").val(allDay);
+				$("#eo_event_create_cal td#date").html(the_date);
+				$('#eo_event_create_cal').dialog('open');
+				$("form.eo_cal input[type='submit']").removeAttr('disabled');
+				$("form.eo_cal input#reset").click(function (event) {
+					$('#eo_event_create_cal').dialog('close');
+				});
+			}
 		}
-        });
+	});
 
 	/* Update time format screen option */
-        $('#eofc_time_format').change(function () {
-            format = ($('#eofc_time_format').is(":checked") ? 'HH:mm' : 'h:mmtt');
-            calendar.fullCalendar('option', 'timeFormat', format);
-            $.post(ajaxurl, {
-                action: 'eofc-format-time',
-                is24: $('#eofc_time_format').is(":checked")
-            });
-        });
-
+	$('#eofc_time_format').on('change', function () {
+		format = ($('#eofc_time_format').is(":checked") ? 'HH:mm' : 'h:mmtt');
+		calendar.fullCalendar('option', 'timeFormat', format);
+		$.post(ajaxurl, {
+			action: 'eofc-format-time',
+			is24: $('#eofc_time_format').is(":checked")
+		});
+	});
 
 	/* View tabs */
-        $('.view-button').click(function (event) {
-        	event.preventDefault();
-        	$('.view-button').removeClass('active');
-        	calendar.fullCalendar('changeView', $(this).attr('id'));
-        	$(this).addClass('active');
-        });
+	$('.view-button').click(function (event) {
+		event.preventDefault();
+		eventorganiser_switch_calendar_to( $(this).attr('id') );
+	});
 
 	/* GoTo 'mini calendar' */
 	function eventorganiser_mini_calendar(){
 		var element = $("<span class='fc-header-goto'><input type='hidden' id='miniCalendar'/></span>");
 		return element;
 	}
-        $('#miniCalendar').datepicker({
-            dateFormat: 'DD, d MM, yy',
-            firstDay: parseInt( EO_Ajax.startday, 10 ),
-            changeMonth: true,
-            monthNamesShort: EO_Ajax.locale.monthAbbrev,
-            dayNamesMin: EO_Ajax.locale.dayAbbrev,
-            changeYear: true,
-            showOn: 'button',
-            buttonText: EO_Ajax.locale.gotodate,
-            onSelect: function (dateText, dp) {
-                calendar.fullCalendar('gotoDate', new Date(Date.parse(dateText)));
-            }
-        });
-        $('button.ui-datepicker-trigger').button();
+	
+	function eventorganiser_switch_calendar_to( mode ){
+		$('.view-button').removeClass('nav-tab-active');
+		calendar.fullCalendar( 'changeView', mode );
+		$('#'+mode).addClass('nav-tab-active');
+	}
+	
+	//Keybard shortcuts
+	$(window).on( 'keypress', function( e ){
+		
+		if ( $(e.target).closest('.ui-dialog').length > 0 ) {
+			return;
+		}
+		
+		switch( e.which ) {
+			case 49://1
+			case 109://m
+			case 77://M
+				eventorganiser_switch_calendar_to( 'month' );
+				break;
+				
+			case 50://W
+			case 119://w
+			case 87://W
+				eventorganiser_switch_calendar_to( 'agendaWeek' );
+				break;
+			case 51://3
+			case 100://d
+			case 68://D
+				eventorganiser_switch_calendar_to( 'agendaDay' );
+				break;
+			case 116://t
+			case 84://T
+				calendar.fullCalendar('today');
+				break;
+			case 103://g
+			case 71://G
+				//$('#miniCalendar').datepicker("show").focus();
+				break;
+				
+			case 110://n
+			case 78://N
+			case 106://j
+			case 74://J
+				calendar.fullCalendar( 'next' );
+				break;
+			case 107://k
+			case 75://K
+			case 112://p
+			case 80://P
+				calendar.fullCalendar( 'prev' );
+				break;
+				
+			case 63://?
+				//open keyboard shortcuts
+				$('#eo-keyboard-shortcuts').dialog('open');
+				break;
+			default:
+				return;
+				 
+		}
+		e.preventDefault();
+	} );
+	
+	$('#eo-keyboard-shortcuts').dialog({
+		autoOpen: false,
+		dialogClass: 'eo-admin-calendar-dialog',
+		title: "Keyboard shortcuts",
+		closeText: 'Close modal',
+		draggable: false,
+		modal: true,
+		open: function( event, ui ) {
+			$(this).parent('.eo-admin-calendar-dialog').focus();
+		}
+	});
+	
+	$('#eo-keyboard-sr-shortcut').on( 'click', function( ev ){
+		ev.preventDefault();
+		$('#eo-keyboard-shortcuts').dialog('open');
+	});
+	
+	//Hack to move screen reader shortcut to where WordPress' SR shortcuts live (if we can)
+	var sr_shortcuts = $('#adminmenumain .screen-reader-shortcut');
+	if ( sr_shortcuts.length > 0 ) { $('#eo-keyboard-sr-shortcut').insertAfter( sr_shortcuts.last() ); }
+
+	$('#miniCalendar').datepicker({
+		dateFormat: 'DD, d MM, yy',
+		firstDay: parseInt( EO_Ajax.startday, 10 ),
+		changeMonth: true,
+		monthNamesShort: EO_Ajax.locale.monthAbbrev,
+		dayNamesMin: EO_Ajax.locale.dayAbbrev,
+		changeYear: true,
+		showOn: 'button',
+		buttonText: EO_Ajax.locale.gotodate,
+		onSelect: function (dateText, dp) {
+			calendar.fullCalendar('gotoDate', new Date(Date.parse(dateText)));
+		}
+	});
+	$('button.ui-datepicker-trigger').button().addClass('fc-button').addClass('fc-state-default');
         
     /* Venue drop-down in modal */
-        
-      //The venue combobox
-        $.widget("ui.combobox", {
-        	_create: function () {
-        	var c = this.element.hide(),d = c.children(":selected"),e = d.val() ? d.text() : "";
-        	var wrapper  = $("<span>").addClass("ui-combobox eo-venue-input").insertAfter(c);
-        	var options = {
-        			delay: 0,
-        			minLength: 0,
-        			source: function (a, callback) {
-        				$.getJSON(EO_Ajax.ajaxurl + "?callback=?&action=eo-search-venue", a, function (a) {
-        					var venues = $.map(a, function (a) {a.label = a.name;return a;});
-        					callback(venues);
-        				});
-        			},
-        			select: function (a, b) {
-        				$("#venue_select").removeAttr("selected");
-        				$("#venue_select").val(b.item.term_id);
-        			}
-        		};
-        		var input = $("<input>").appendTo(wrapper).val(e).addClass("ui-combobox-input").autocomplete(options).addClass("ui-widget-content ui-corner-left");
-                     
-        		/* Backwards compat with WP 3.3-3.5 (UI 1.8.16-1.9.2)*/
-        		var jquery_ui_version = $.ui ? $.ui.version || 0 : -1;
-        		var ac_namespace = ( eventorganiser.versionCompare( jquery_ui_version, '1.10' ) >= 0 ? 'ui-autocomplete' : 'autocomplete' );
-        		
-        		
-        		//Apend venue address to drop-down
-        		input.data( ac_namespace )._renderItem = function (a, b) {
-        			if (b.term_id === 0 ) {
-        				return $("<li></li>").data( ac_namespace + "-item", b).append("<a>" + b.label + "</a>").appendTo(a);
-        			}
-        			//Clean address
-        			var address_array = [b.venue_address, b.venue_city, b.venue_state,b.venue_postcode,b.venue_country];
-        			var address = $.grep(address_array,function(n){return(n);}).join(', ');
-        		
-        			/* Backwards compat with WP 3.3-3.5 (UI 1.8.16-1.9.2)*/
-        			var li_ac_namespace = ( eventorganiser.versionCompare( jquery_ui_version, '1.10' ) >= 0 ? 'ui-autocomplete-item' : 'item.autocomplete' );
+	$.widget("ui.combobox", {
+		_create: function () {
+			var c = this.element.hide(),id = c.attr( 'id' ),d = c.children(":selected"),e = d.val() ? d.text() : "";
+			var wrapper  = $("<span>").addClass("ui-combobox eo-venue-input").insertAfter(c);
+			var $hiddenEl = $('<input type="hidden" name="'+c.attr('name')+'" value="'+e+'"/>');
+			var input = $("<input>").attr('id',id).appendTo(wrapper).val(e).addClass("ui-combobox-input");
+			var options = {
+				delay: 0,
+				minLength: 0,
+				source: function (a, callback) {
+					input.addClass( 'eo-waiting' );
+					$.getJSON(EO_Ajax.ajaxurl + "?action=eo-search-venue", a, function (a) {
+						var venues = $.map(a, function (a) {a.label = a.name;return a;});
+						callback(venues);
+						input.removeClass( 'eo-waiting' );
+					});
+				},
+				select: function (a, b) {
+					$hiddenEl.val( b.item.term_id );
+				}
+			};
+			input.autocomplete(options).addClass("ui-widget-content ui-corner-left");
+			this.element.replaceWith( $hiddenEl );
+			
+			/* Backwards compat with WP 3.3-3.5 (UI 1.8.16-1.9.2)*/
+			var jquery_ui_version = $.ui ? $.ui.version || 0 : -1;
+			var ac_namespace = ( eventorganiser.versionCompare( jquery_ui_version, '1.10' ) >= 0 ? 'ui-autocomplete' : 'autocomplete' );
 
-        			return $("<li></li>").data( li_ac_namespace, b)
-        				.append("<a>" + b.label + "</br> <span style='font-size: 0.8em'><em>" +address+ "</span></em></a>").appendTo(a);
-        		};
+			//Apend venue address to drop-down
+			input.data( ac_namespace )._renderItem = function (a, b) {
+				if (b.term_id === 0 ) {
+					return $("<li></li>").data( ac_namespace + "-item", b).append("<a>" + b.label + "</a>").appendTo(a);
+				}
+				//Clean address
+				var address_array = [b.venue_address, b.venue_city, b.venue_state,b.venue_postcode,b.venue_country];
+				var address = $.grep(address_array,function(n){return(n);}).join(', ');
 
-        		//Add new / selec buttons
-        		var button_wrappers = $("<span>").addClass("eo-venue-combobox-buttons").appendTo(wrapper);
-        		$("<a style='vertical-align: top;margin: 0px -1px;padding: 0px;height: 21px;'>").attr("title", "Show All Items").appendTo(button_wrappers).button({
-        			icons: { primary: "ui-icon-triangle-1-s"},
-        			text: false
-        		}).removeClass("ui-corner-all").addClass("ui-corner-right ui-combobox-toggle ui-combobox-button").click(function () {
-        			if (input.autocomplete("widget").is(":visible")) {input.autocomplete("close");return;}
-        			$(this).blur();
-        			input.autocomplete("search", "").focus();
-        		});	
-        	}
-        });
-        $("#venue_select").combobox();
+				/* Backwards compat with WP 3.3-3.5 (UI 1.8.16-1.9.2)*/
+				var li_ac_namespace = ( eventorganiser.versionCompare( jquery_ui_version, '1.10' ) >= 0 ? 'ui-autocomplete-item' : 'item.autocomplete' );
+
+				return $("<li></li>").data( li_ac_namespace, b)
+					.append("<a>" + b.label + "</br> <span style='font-size: 0.8em'><em>" +address+ "</span></em></a>").appendTo(a);
+			};
+
+			//Add new / selec buttons
+			var button_wrappers = $("<span>").addClass("eo-venue-combobox-buttons").appendTo(wrapper);
+			$("<a href='#' style='vertical-align: top;margin: 0px -1px;padding: 0px;height:26px;'>")
+				.attr("title", "Show All Venues")
+				.appendTo(button_wrappers)
+				.button({
+					icons: { primary: "ui-icon-triangle-1-s"},
+					text: false
+				})
+				.removeClass("ui-corner-all")
+				.addClass("eo-ui-button ui-corner-right ui-combobox-toggle ui-combobox-button")
+				.mousedown(function() {
+					wasOpen = input.autocomplete( "widget" ).is( ":visible" );
+				})
+				.click(function (ev) {
+					ev.preventDefault();
+		            if ( wasOpen ) {
+		                return;
+		            }
+					$(this).blur();
+					input.autocomplete("search", "").focus();
+				});
+		}
+	});
+	$("#venue_select").combobox();
 
     
 
@@ -332,6 +422,10 @@ eventorganiser.versionCompare = function(left, right) {
 	function eventorganiser_cat_dropdown(options){
 
 		var terms = options.categories;
+		
+		if( !terms ){
+			return;
+		}
 
 		var html="<select class='eo-cal-filter' id='eo-event-cat'>";
 		html+="<option value=''>"+options.buttonText.cat+"</option>";
@@ -346,6 +440,10 @@ eventorganiser.versionCompare = function(left, right) {
 	function eventorganiser_venue_dropdown(options){
 
 		var venues = options.venues;
+		
+		if( !venues ){
+			return;
+		}
 
 		var html="<select class='eo-cal-filter' id='eo-event-venue'>";
 		html+="<option value=''>"+options.buttonText.venue+"</option>";
@@ -357,7 +455,7 @@ eventorganiser.versionCompare = function(left, right) {
 
 		return $("<span class='fc-header-dropdown filter-venue'></span>").append(html);
 	}
-        $(".eo-cal-filter").change(function () {
+        $(".eo-cal-filter").on('change', function () {
             calendar.fullCalendar('rerenderEvents');
         });
         $('.filter-venue .eo-cal-filter').selectmenu({
@@ -409,11 +507,8 @@ $.widget("ui.selectmenu", {
 		// make / set unique id
 		/* Backwards compat with WP 3.3-3.4 (jQuery UI 1.8.16-1.8.2)*/
 		var jquery_ui_version = $.ui ? $.ui.version || 0 : -1;
-		var selectmenuId = ( eventorganiser.versionCompare( jquery_ui_version, '1.9' ) >= 0 ) 
-				? this.element.uniqueId().attr( "id" )
-				: this.element.attr( 'id' ) || 'ui-selectmenu-' + Math.random().toString( 16 ).slice( 2, 10 );
+		var selectmenuId = ( eventorganiser.versionCompare( jquery_ui_version, '1.9' ) >= 0 ) ? this.element.uniqueId().attr( "id" ) : this.element.attr( 'id' ) || 'ui-selectmenu-' + Math.random().toString( 16 ).slice( 2, 10 );
 		
-
 		// quick array of button and menu id's
 		this.ids = [ selectmenuId, selectmenuId + '-button', selectmenuId + '-menu' ];
 		
@@ -427,7 +522,7 @@ $.widget("ui.selectmenu", {
 			'id' : this.ids[ 1 ],
 			'role': 'button',
 			'href': '#nogo',
-			'tabindex': this.element.attr( 'disabled' ) ? 1 : 0,
+			'tabindex': this.element.prop( 'disabled' ) ? 1 : 0,
 			'aria-haspopup': true,
 			'aria-owns': this.ids[ 2 ]
 		});
@@ -461,7 +556,7 @@ $.widget("ui.selectmenu", {
 
 		// click toggle for menu visibility
 		this.newelement
-			.bind( 'mousedown.selectmenu', function( event ) {
+			.on( 'mousedown.selectmenu', function( event ) {
 				self._toggle( event, true );
 				// make sure a click won't open/close instantly
 				if ( o.style == "popup" ) {
@@ -471,7 +566,7 @@ $.widget("ui.selectmenu", {
 
 				event.preventDefault();
 			})
-			.bind( 'click.selectmenu', function( event ) {
+			.on( 'click.selectmenu', function( event ) {
 				event.preventDefault();
 			})
 			.bind( "keydown.selectmenu", function( event ) {
@@ -659,9 +754,9 @@ $.widget("ui.selectmenu", {
 			selectOptionData.push({
 				value: opt.attr( 'value' ),
 				text: self._formatText( opt.text(), opt ),
-				selected: opt.attr( 'selected' ),
-				disabled: opt.attr( 'disabled' ),
-				classes: opt.attr( 'class' ),
+				selected: opt.prop( 'selected' ),
+				disabled: opt.prop( 'disabled' ),
+				classes: opt.prop( 'class' ),
 				typeahead: opt.attr( 'typeahead'),
 				parentOptGroup: opt.parent( 'optgroup' ),
 				bgImage: o.bgImage.call( opt )
@@ -692,14 +787,14 @@ $.widget("ui.selectmenu", {
 					thisAAttr[ 'aria-disabled' ] = selectOptionData[ i ].disabled;
 				}
 				if ( selectOptionData[ i ].typeahead ) {
-					thisAAttr[ 'typeahead' ] = selectOptionData[ i ].typeahead;
+					thisAAttr.typeahead = selectOptionData[ i ].typeahead;
 				}
 				var thisA = $( '<a/>', thisAAttr )
 					.bind( 'focus.selectmenu', function() {
-						$( this ).parent().mouseover();
+						$( this ).parent().trigger( "mouseover" );
 					})
 					.bind( 'blur.selectmenu', function() {
-						$( this ).parent().mouseout();
+						$( this ).parent().trigger( "mouseout" );
 					});
 				var thisLi = $( '<li/>', thisLiAttr )
 					.append( thisA )
@@ -742,7 +837,7 @@ $.widget("ui.selectmenu", {
 					if ( this.list.find( 'li.' + optGroupName ).length ) {
 						this.list.find( 'li.' + optGroupName + ':last ul' ).append( thisLi );
 					} else {
-						$( '<li role="presentation" class="ui-selectmenu-group ' + optGroupName + ( selectOptionData[ i ].parentOptGroup.attr( "disabled" ) ? ' ' + 'ui-state-disabled" aria-disabled="true"' : '"' ) + '><span class="ui-selectmenu-group-label">' + selectOptionData[ i ].parentOptGroup.attr( 'label' ) + '</span><ul></ul></li>' )
+						$( '<li role="presentation" class="ui-selectmenu-group ' + optGroupName + ( selectOptionData[ i ].parentOptGroup.prop( "disabled" ) ? ' ' + 'ui-state-disabled" aria-disabled="true"' : '"' ) + '><span class="ui-selectmenu-group-label">' + selectOptionData[ i ].parentOptGroup.attr( 'label' ) + '</span><ul></ul></li>' )
 							.appendTo( this.list )
 							.find( 'ul' )
 							.append( thisLi );
@@ -831,17 +926,17 @@ $.widget("ui.selectmenu", {
 		this.element.removeData( this.widgetName )
 			.removeClass( 'ui-selectmenu-disabled' + ' ' + 'ui-state-disabled' )
 			.removeAttr( 'aria-disabled' )
-			.unbind( ".selectmenu" );
+			.off( ".selectmenu" );
 
-		$( window ).unbind( ".selectmenu-" + this.ids[ 0 ] );
-		$( document ).unbind( ".selectmenu-" + this.ids[ 0 ] );
+		$( window ).off( ".selectmenu-" + this.ids[ 0 ] );
+		$( document ).off( ".selectmenu-" + this.ids[ 0 ] );
 
 		this.newelementWrap.remove();
 		this.listWrap.remove();
 
 		// unbind click event and show original select
 		this.element
-			.unbind( ".selectmenu" )
+			.off( ".selectmenu" )
 			.show();
 
 		// call widget destroy function
@@ -1034,7 +1129,11 @@ $.widget("ui.selectmenu", {
 
 			if ( this._optionLis.eq( newIndex ).hasClass( 'ui-state-disabled' ) ) {
 				// if option at newIndex is disabled, call _moveFocus, incrementing amt by one
-				( amt > 0 ) ? ++amt : --amt;
+				if( amt > 0 ){ 
+					++amt;
+				}else{
+					--amt;
+				}
 				this._moveSelection( amt, newIndex );
 			} else {
 				this._optionLis.eq( newIndex ).trigger( 'mouseover' ).trigger( 'mouseup' );
@@ -1043,11 +1142,12 @@ $.widget("ui.selectmenu", {
 	},
 
 	_moveFocus: function( amt, recIndex ) {
+		var newIndex;
 		if ( !isNaN( amt ) ) {
 			var currIndex = parseInt( this._focusedOptionLi().data( 'index' ) || 0, 10 );
-			var newIndex = currIndex + amt;
+			newIndex = currIndex + amt;
 		} else {
-			var newIndex = parseInt( this._optionLis.filter( amt ).data( 'index' ), 10 );
+			newIndex = parseInt( this._optionLis.filter( amt ).data( 'index' ), 10 );
 		}
 
 		if ( newIndex < 0 ) {
@@ -1068,7 +1168,11 @@ $.widget("ui.selectmenu", {
 
 		if ( this._optionLis.eq( newIndex ).hasClass( 'ui-state-disabled' ) ) {
 			// if option at newIndex is disabled, call _moveFocus, incrementing amt by one
-			( amt > 0 ) ? ++amt : --amt;
+			if( amt > 0 ){ 
+				++amt;
+			}else{
+				--amt;
+			}
 			this._moveFocus( amt, newIndex );
 		} else {
 			this._optionLis.eq( newIndex ).find( 'a:eq(0)' ).attr( 'id',activeID ).focus();
@@ -1226,7 +1330,7 @@ $.widget("ui.selectmenu", {
 
 		this.listWrap
 			.removeAttr( 'style' )
-			.zIndex( this.element.zIndex() + 2 )
+			.css( 'zIndex', this.element.css('zIndex') + 2 )
 			.position( $.extend( positionDefault, o.positionOptions ) );
 	}
 });
@@ -1283,15 +1387,16 @@ $.widget("ui.selectmenu", {
 
 			value = config.json ? JSON.stringify(value) : String(value);
 
-			return (document.cookie = [
-				config.raw ? key : encodeURIComponent(key),
-				'=',
-				config.raw ? value : encodeURIComponent(value),
-				options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
-				options.path    ? '; path=' + options.path : '',
-				options.domain  ? '; domain=' + options.domain : '',
-				options.secure  ? '; secure' : ''
-			].join(''));
+			document.cookie = [
+			   				config.raw ? key : encodeURIComponent(key),
+			   				'=',
+			   				config.raw ? value : encodeURIComponent(value),
+			   				options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
+			   				options.path    ? '; path=' + options.path : '',
+			   				options.domain  ? '; domain=' + options.domain : '',
+			   				options.secure  ? '; secure' : ''
+			   			].join('');
+			return document;
 		}
 
 		// read

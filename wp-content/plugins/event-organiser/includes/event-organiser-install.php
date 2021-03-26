@@ -7,46 +7,60 @@
  *@access private
  *@ignore
 */
- function eventorganiser_install( $is_networkwide = false ){
-       global $wpdb;
+function eventorganiser_install( $is_networkwide = false ) {
 
-    	// Is this multisite and did the user click network activate?
-    	$is_multisite = ( function_exists('is_multisite') && is_multisite() );
+	global $wpdb;
 
-    	if ($is_multisite && $is_networkwide) {
-    	    	// Get the current blog so we can return to it.
-	        $current_blog_id = get_current_blog_id();
+	if ( ! defined( 'EVENT_ORGANISER_URL' ) ) {
+		define( 'EVENT_ORGANISER_URL', plugin_dir_url( EVENT_ORGANISER_DIR.'event-organiser.php' ) );
+	}
 
-	        // Get a list of all blogs.
-	         $blog_ids = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
-		if( $blog_ids ){
+	// If this is multisite and the user clicked network activate - we'll need to loop over all sites
+	$is_multisite = ( function_exists( 'is_multisite' ) && is_multisite() );
+
+	if ( $is_multisite && $is_networkwide ) {
+		// Get the current blog so we can return to it.
+		$current_blog_id = get_current_blog_id();
+
+		$blog_ids = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
+		if ( $blog_ids ) {
 			foreach ( $blog_ids as $blog_id ) {
 				switch_to_blog( $blog_id );
-	            		eventorganiser_site_install();
-	       		 }
+				eventorganiser_site_install();
+			}
 			switch_to_blog( $current_blog_id );
-		}else{
+		} else {
 			eventorganiser_site_install();
 		}
-    	}else {
-    	    eventorganiser_site_install();
-    	}
+	} else {
+		eventorganiser_site_install();
+	}
 }
 
-function eventorganiser_site_install(){
-	global $wpdb; 
+function eventorganiser_site_install() {
+
+	global $wpdb;
+
 	$eventorganiser_db_version = defined( 'EVENT_ORGANISER_VER' ) ? EVENT_ORGANISER_VER : false;
 
 	eventorganiser_wpdb_fix();
 
 	$charset_collate = '';
-	if ( ! empty($wpdb->charset) )
+	if ( ! empty($wpdb->charset) ) {
 		$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
-	if ( ! empty($wpdb->collate) )
+	}
+	if ( ! empty($wpdb->collate) ) {
 		$charset_collate .= " COLLATE $wpdb->collate";
+	}
+
+	/*
+	 * Handling maximum index size of 767 bytes.
+	 * See wp_get_db_schema() function in wp-admin/includes/schema.php for more details.
+	 */
+	$max_index_length = 191;
 
 	//Events table
-	$sql_events_table = "CREATE TABLE " .$wpdb->eo_events. " (
+	$sql_events_table = "CREATE TABLE {$wpdb->eo_events} (
 		event_id bigint(20) NOT NULL AUTO_INCREMENT,
 		post_id bigint(20) NOT NULL,
 		StartDate DATE NOT NULL,
@@ -58,68 +72,69 @@ function eventorganiser_site_install(){
 		KEY StartDate (StartDate),
 		KEY EndDate (EndDate)
 		)".$charset_collate;
-	
+
 	//Venue meta table
-	$sql_venuemeta_table ="CREATE TABLE {$wpdb->prefix}eo_venuemeta (
+	$sql_venuemeta_table = "CREATE TABLE {$wpdb->eo_venuemeta} (
 		meta_id bigint(20) unsigned NOT NULL auto_increment,
 		eo_venue_id bigint(20) unsigned NOT NULL default '0',
  		meta_key varchar(255) default NULL,
 		meta_value longtext,
 		PRIMARY KEY  (meta_id),
 		KEY eo_venue_id (eo_venue_id),
-		KEY meta_key (meta_key)
+		KEY meta_key (meta_key($max_index_length))
 		) $charset_collate; ";
 
-	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-	dbDelta($sql_events_table);
-	dbDelta($sql_venuemeta_table);
+	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+	dbDelta( $sql_events_table );
+	dbDelta( $sql_venuemeta_table );
 
 	//Add options and capabilities
-	$eventorganiser_options = array (	
-		'supports' => array('title','editor','author','thumbnail','excerpt','custom-fields','comments'),
-		'event_redirect' => 'events',
-		'dateformat'=>'dd-mm',
-		'prettyurl'=> 1,
-		'templates'=> 1,
-		'addtomenu'=> 0,
-		'excludefromsearch'=>0,
-		'showpast'=> 0,
-		'group_events'=>'',
-		'url_venue'=>'events/event',
-		'url_venue'=> 'events/venues',
-		'url_cat' => 'events/category',
-		'url_tag' => 'events/tag',
-		'navtitle' => __('Events','eventorganiser'),
-		'eventtag' => 1,
-		'feed' => 1,
-		'runningisnotpast' => 0,
-		'deleteexpired' => 0
+	$eventorganiser_options = array(
+		'supports'          => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields' ),
+		'event_redirect'    => 'events',
+		'dateformat'        => 'dd-mm',
+		'prettyurl'         => 1,
+		'templates'         => 'themecompat',
+		'addtomenu'         => 0,
+		'excludefromsearch' => 0,
+		'showpast'          => 0,
+		'group_events'      => '',
+		'url_venue'         => 'events/event',
+		'url_venue'         => 'events/venues',
+		'url_cat'           => 'events/category',
+		'url_tag'           => 'events/tag',
+		'navtitle'          => __( 'Events', 'eventorganiser' ),
+		'eventtag'          => 1,
+		'feed'              => 1,
+		'runningisnotpast'  => 0,
+		'deleteexpired'     => 0,
+		'map_provider'      => 'openstreetmap'
 	);
-	add_option('eventorganiser_options',$eventorganiser_options);
+	add_option( 'eventorganiser_options', $eventorganiser_options );
 
 	/* Add existing notices */
-	$notices = array('autofillvenue17','changedtemplate17');
-	add_option('eventorganiser_admin_notices',$notices);
-	
-	//Add roles to administrator		
+	$notices = array( 'changedtemplate17' );
+	add_option( 'eventorganiser_admin_notices', $notices );
+
+	//Add roles to administrator
 	global $wp_roles;
 	$all_roles = $wp_roles->roles;
-	$eventorganiser_roles =  array(
-			 'edit_events' => __( 'Edit Events', 'eventorganiser' ),
-			 'publish_events' => __( 'Publish Events', 'eventorganiser' ),
-			 'delete_events' => __( 'Delete Events', 'eventorganiser' ),
-			'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
-			 'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
-			'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
-			 'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
-			 'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
-		);
-	foreach ($all_roles as $role_name => $display_name):
-		$role = $wp_roles->get_role($role_name);
-		if($role->has_cap('manage_options')){
-			foreach($eventorganiser_roles as $eo_role=>$eo_role_display):
-				$role->add_cap($eo_role);
-			endforeach;  
+	$eventorganiser_roles = array(
+		'edit_events'             => __( 'Edit Events', 'eventorganiser' ),
+		'publish_events'          => __( 'Publish Events', 'eventorganiser' ),
+		'delete_events'           => __( 'Delete Events', 'eventorganiser' ),
+		'edit_others_events'      => __( 'Edit Others\' Events', 'eventorganiser' ),
+		'delete_others_events'    => __( 'Delete Other\'s Events', 'eventorganiser' ),
+		'read_private_events'     => __( 'Read Private Events', 'eventorganiser' ),
+		'manage_venues'           => __( 'Manage Venues', 'eventorganiser' ),
+		'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
+	);
+	foreach ( $all_roles as $role_name => $display_name ) :
+		$role = $wp_roles->get_role( $role_name );
+		if ( $role->has_cap( 'manage_options' ) ) {
+			foreach ( $eventorganiser_roles as $eo_role => $eo_role_display ) :
+				$role->add_cap( $eo_role );
+			endforeach;
 		}
 	endforeach;  //End foreach $all_roles
 
@@ -140,9 +155,9 @@ function eventorganiser_site_install(){
  *@access private
  *@ignore
 */
-function eventorganiser_deactivate(){
+function eventorganiser_deactivate() {
 	flush_rewrite_rules();
-    }
+}
 
 
 /**
@@ -152,68 +167,150 @@ function eventorganiser_deactivate(){
  *@access private
  *@ignore
 */
-function eventorganiser_upgradecheck(){
+function eventorganiser_upgradecheck() {
 	global $wpdb, $EO_Errors;
 	$eventorganiser_db_version = defined( 'EVENT_ORGANISER_VER' ) ? EVENT_ORGANISER_VER : false;
-		
-	$installed_ver = get_option('eventorganiser_version');
 
-	if( empty($installed_ver) ){
+	$installed_ver = get_option( 'eventorganiser_version' );
+
+	if ( empty($installed_ver) ) {
 		//This is a fresh install. Add current database version
-		add_option('eventorganiser_version', $eventorganiser_db_version);
+		add_option( 'eventorganiser_version', $eventorganiser_db_version );
 
 		//But a bug in 1.5 means that it could be that they first installed in 1.5 (as no db version was added)
 		//So set to 1.5.  Fresh installs will have to go through the 1.6 (and above) update, but this is ok.
 		$installed_ver = '1.5';
+
+		eventorganiser_install();
 	}
 
 	//If this is an old version, perform some updates.
-	if ( !empty($installed_ver ) && $installed_ver != $eventorganiser_db_version ):
+	if ( ! empty( $installed_ver ) && $installed_ver != $eventorganiser_db_version ) {
 
-		if($installed_ver <'1.3'){
-			wp_die('You cannot upgrade to this version from 1.3 or before. Please upgrade to 1.5.7 first.');
+		if ( version_compare( $installed_ver, '1.3', '<' ) ) {
+			wp_die( 'You cannot upgrade to this version from 1.3 or before. Please upgrade to 1.5.7 first.' );
 		}
 
-		if($installed_ver <'1.4'){
+		if ( version_compare( $installed_ver, '1.4', '<' ) ) {
 			eventorganiser_140_update();
 		}
 
-		if($installed_ver <'1.5'){
+		if ( version_compare( $installed_ver, '1.5', '<' ) ) {
 			eventorganiser_150_update();
 		}
-		if( $installed_ver < '1.6'  ){
+		if ( version_compare( $installed_ver, '1.6', '<' )  ) {
 			//Remove columns:
-			$columns = $wpdb->get_col("DESC {$wpdb->eo_events}", 0);
-			$remove_columns = array('Venue','event_schedule','event_schedule_meta', 'event_frequency','reoccurrence_start', 'reoccurrence_end' );
-			$delete_columns = array_intersect($remove_columns, $columns);
-			if( !empty($delete_columns) )
-				$sql = $wpdb->query("ALTER TABLE {$wpdb->eo_events} DROP COLUMN ".implode(', DROP COLUMN ',$delete_columns).';');
-		
+			$columns = $wpdb->get_col( "DESC {$wpdb->eo_events}", 0 );
+			$remove_columns = array( 'Venue', 'event_schedule', 'event_schedule_meta', 'event_frequency', 'reoccurrence_start', 'reoccurrence_end' );
+			$delete_columns = array_intersect( $remove_columns, $columns );
+			if ( ! empty( $delete_columns ) ) {
+				$sql = $wpdb->query( "ALTER TABLE {$wpdb->eo_events} DROP COLUMN ".implode( ', DROP COLUMN ', $delete_columns ).';' );
+			}
+
 			eventorganiser_install();
 		}
 
-		if( $installed_ver < '1.6.2' ){
-			$options = get_option('eventorganiser_options');
-			if( !empty($options['eventtag']) ){
+		if ( version_compare( $installed_ver, '1.6.2', '<' ) ) {
+			$options = get_option( 'eventorganiser_options' );
+			if ( ! empty( $options['eventtag'] ) ) {
 				$options['supports'][] = 'eventtag';
-				update_option('eventorganiser_options', $options);
+				update_option( 'eventorganiser_options', $options );
 			}
 		}
-		if( $installed_ver < '1.7.1' ){
-			//Forgot to remove event_allday in 1.6 upgrade. This causes problems no Windows servers.
-			$columns = $wpdb->get_col("DESC {$wpdb->eo_events}", 0);
-			$remove_columns = array('event_allday');
-			if( !empty($delete_columns) )
-				$sql = $wpdb->query("ALTER TABLE {$wpdb->eo_events} DROP COLUMN ".implode(', DROP COLUMN ',$delete_columns).';');
+
+		if ( version_compare( $installed_ver, '2.7.3', '<' ) ) {
+			//Ensure event_allday columns is removed. This causes problems on Windows servers.
+			$columns = $wpdb->get_col( "DESC {$wpdb->eo_events}", 0 );
+			$remove_columns = array( 'event_allday' );
+			$delete_columns = array_intersect( $remove_columns, $columns );
+			if ( ! empty( $delete_columns ) ) {
+				$sql = $wpdb->query( "ALTER TABLE {$wpdb->eo_events} DROP COLUMN ".implode( ', DROP COLUMN ', $delete_columns ).';' );
+			}
 			flush_rewrite_rules();
 		}
-		update_option('eventorganiser_version', $eventorganiser_db_version);
+
+		if ( version_compare( $installed_ver, '2.12.0', '<' ) && version_compare( get_bloginfo( 'version' ), '4.2-alpha-31007-src', '>=' ) ) {
+			//If the user is upgrading from an earlier version (without the split term fix)
+			//and they have already upgraded to WP 4.2.0, then run the update routine
+			eventorganiser_021200_update();
+		}
+
+		if ( version_compare( $installed_ver, '3.0.0', '<' ) ) {
+			//Agenda widget refactored, clear widget cache
+			delete_transient( 'eo_widget_agenda' );
+			_eventorganiser_delete_calendar_cache();
+		}
+
+		if ( version_compare( $installed_ver, '3.0.3', '<' ) ) {
+			//Bug with filtering venues fixed - requires cache to be cleared
+			delete_transient( 'eo_full_calendar_public' );
+			delete_transient( 'eo_full_calendar_public_priv' );
+		}
+
+		if ( version_compare( $installed_ver, '3.7.0', '<' ) ) {
+			$options = get_option( 'eventorganiser_options' );
+			//Sites installed before 3.7.0 should have 'googlemaps' as the map map_provider
+			//unless otherwise specified.
+			if ( empty( $options['map_provider'] ) ) {
+				$options['map_provider'] = 'googlemaps';
+				update_option( 'eventorganiser_options', $options );
+			}
+		}
+
+		update_option( 'eventorganiser_version', $eventorganiser_db_version );
 
 		//Run upgrade checks
-		add_action('admin_notices', 'eventorganiser_db_checks',0);
-	endif;
+		add_action( 'admin_notices', 'eventorganiser_db_checks', 0 );
+	};
+
 }
-add_action('admin_init', 'eventorganiser_upgradecheck');
+add_action( 'admin_init', 'eventorganiser_upgradecheck' );
+
+/**
+ * Upgrade routine for 2.12.0
+ * @access private
+ * @ignore
+ */
+function eventorganiser_021200_update() {
+
+	global $wpdb;
+
+	//Venues
+	$meta_venue_ids = $wpdb->get_col( "SELECT DISTINCT eo_venue_id FROM {$wpdb->eo_venuemeta} ORDER BY {$wpdb->eo_venuemeta}.meta_id" );
+	if( $meta_venue_ids ){
+		foreach( $meta_venue_ids as $old_venue_id ){
+			$new_venue_id = wp_get_split_term( $old_venue_id, 'event-venue' );
+
+			//If $new_venue_id is false, the term ID never changed
+			//If $new_venue_id is in $meta_venue_ids, then it already has data in the meta table
+			if( $new_venue_id && !in_array( $new_venue_id, $meta_venue_ids ) ){
+				$wpdb->update(
+					$wpdb->eo_venuemeta,
+					array( 'eo_venue_id' => $new_venue_id ),
+					array( 'eo_venue_id' => $old_venue_id )
+				);
+				wp_cache_delete( $new_venue_id, 'eo_venue_meta' );
+			}
+		}
+	}
+
+	//Categories
+	$category_options = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'eo-event-category\_%'" );
+	if( $category_options ){
+		foreach( $category_options as $option_name ){
+			$old_cat_id = (int) substr( $option_name, 18 );//18 = length of eo-event-category_
+			if( $old_cat_id ){
+				$new_cat_id = wp_get_split_term( $old_cat_id, 'event-category' );
+				if( $new_cat_id && !get_option( "eo-event-category_{$new_cat_id}" ) ){
+					$value = get_option( "eo-event-category_{$old_cat_id}" );
+					update_option( "eo-event-category_{$new_cat_id}", $value );
+					delete_option( "eo-event-category_{$old_cat_id}" );
+				}
+			}
+		}
+	}
+
+}
 
 /**
  * Upgrade routine for 1.5
@@ -334,6 +431,8 @@ function eventorganiser_uninstall( $is_networkwide = false ){
 function eventorganiser_uninstall_site(){
 	global $wpdb,$eventorganiser_roles, $wp_roles,$wp_taxonomies;
 
+	eventorganiser_wpdb_fix();
+
 	eventorganiser_clear_cron_jobs();
 	eventorganiser_create_event_taxonomies();
 
@@ -347,9 +446,6 @@ function eventorganiser_uninstall_site(){
 			wp_delete_term($term_id ,$term->taxonomy);
 		}
 	}
-
-	//Remove all posts of CPT Event
-	//?? $wpdb->query("DELETE FROM $wpdb->posts WHERE post_type = 'event'");
 
 	//Delete options
 	delete_option('eventorganiser_options');
@@ -365,25 +461,24 @@ function eventorganiser_uninstall_site(){
 		$role = $wp_roles->get_role($role_name);
 		foreach($eventorganiser_roles as $eo_role=>$eo_role_display):
 			$role->remove_cap($eo_role);
-		endforeach;  
-	endforeach; 
-	
+		endforeach;
+	endforeach;
+
 	eventorganiser_clear_cron_jobs();
 
-	//Drop tables    
+	//Drop tables
 	$wpdb->query("DROP TABLE IF EXISTS $wpdb->eo_events");
 	$eventorganiser_venue_table = $wpdb->prefix."eo_venues";
 	$wpdb->query("DROP TABLE IF EXISTS $eventorganiser_venue_table");
 	$wpdb->query("DROP TABLE IF EXISTS $wpdb->eo_venuemeta");
 
 	//Remove user-meta-data:
-	$meta_keys = array('metaboxhidden_event','closedpostboxes_event','wp_event_page_venues_per_page','manageedit-eventcolumnshidden');	
+	$meta_keys = array('metaboxhidden_event','closedpostboxes_event','wp_event_page_venues_per_page','manageedit-eventcolumnshidden');
 	$sql =$wpdb->prepare("DELETE FROM $wpdb->usermeta WHERE ");
 	foreach($meta_keys as $key):
 		$sql .= $wpdb->prepare("meta_key = %s OR ",$key);
 	endforeach;
 	$sql.=" 1=0 "; //Deal with final 'OR', must be something false!
-	$re =$wpdb->get_results( $sql);	
+	$re =$wpdb->get_results( $sql);
 	flush_rewrite_rules();
     }
-?>

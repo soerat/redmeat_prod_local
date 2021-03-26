@@ -1,32 +1,46 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit; // disable direct access
-}
+if (!defined('ABSPATH')) die('No direct access.');
 
 /**
  * Check for common issues with the server environment and WordPress install.
  */
 class MetaSliderSystemCheck {
 
-    var $options = array();
+	/**
+	 * System check options
+	 *
+	 * @var array
+	 */
+	private $options = array();
+	
+	/**
+	 * Current slideshow ID
+	 *
+	 * @var int
+	 */
+	private $slideshow_id;
 
-    /**
-     * Constructor
-     */
-    public function __construct() {
-        $this->options = get_site_option( 'metaslider_systemcheck' );
-    }
+	/**
+	 * Constructor
+	 * 
+	 * @param int|null $slideshow_id The current slideshow ID
+	 */
+	public function __construct($slideshow_id = null) {
+		$this->slideshow_id = $slideshow_id;
+		$this->options = get_site_option( 'metaslider_systemcheck' );
+	}
 
     /**
      * Check the system
      */
     public function check() {
         $this->dismissMessages();
+        $this->checkMaxInputVars();
         $this->checkWordPressVersion();
         $this->checkImageLibrary();
         $this->checkRoleScoper();
-        //$this->checkWpFooter();
+        // $this->checkWpFooter();
         $this->updateSystemCheck();
     }
 
@@ -53,6 +67,26 @@ class MetaSliderSystemCheck {
     }
 
     /**
+     * Check if the server can handle saving
+     */
+    private function checkMaxInputVars() {
+		if (!isset($_GET['input_vars_error'])) return;
+
+		// max_input_vars is not available < PHP5.3.9
+		if (version_compare(phpversion(), '5.3.9', '<')) return;
+		$max_input_vars = ini_get('max_input_vars'); // phpcs:ignore PHPCompatibility.IniDirectives.NewIniDirectives.max_input_varsFound
+
+		$error = sprintf(
+			__('Your settings might not be saving properly due to a configuration on your server. %s is currently set to %s, but we recommend a setting of 4000. Please see %s for more information. The php.ini file is being loaded from here: %s', 'ml-slider'), '<code>max_input_vars</code>',
+			$max_input_vars,
+			sprintf('<a target="_blank" href="https://www.metaslider.com/faqs/settings-on-my-slideshow-are-not-saving/" class="text-blue underline">%s</a>', __('this article', 'ml-slider')),
+			'<code>' . php_ini_loaded_file() . '</code>'
+		);
+
+		$this->printMessage($error, 'maxInputVars', 'dismissable');
+	}
+
+    /**
      * Check the WordPress version.
      */
     private function checkWordPressVersion() {
@@ -61,7 +95,7 @@ class MetaSliderSystemCheck {
         }
 
         if ( !function_exists( 'wp_enqueue_media' ) ) {
-            $error = "Meta Slider requires WordPress 3.5 or above. Please upgrade your WordPress installation.";
+            $error = "MetaSlider requires WordPress 3.5 or above. Please upgrade your WordPress installation.";
             $this->printMessage( $error, 'wordPressVersion' );
         } else {
             $this->options['wordPressVersion'] = false;
@@ -77,7 +111,7 @@ class MetaSliderSystemCheck {
         }
 
         if ( ( !extension_loaded( 'gd' ) || !function_exists( 'gd_info' ) ) && ( !extension_loaded( 'imagick' ) || !class_exists( 'Imagick' ) || !class_exists( 'ImagickPixel' ) ) ) {
-            $error = "Meta Slider requires the GD or ImageMagick PHP extension. Please contact your hosting provider";
+            $error = "MetaSlider requires the GD or ImageMagick PHP extension. Please contact your hosting provider";
             $this->printMessage( $error, 'imageLibrary' );
         } else {
             $this->options['imageLibrary'] = false;
@@ -148,9 +182,21 @@ class MetaSliderSystemCheck {
 
     /**
      * Print a warning message to the screen
+     *
+     * @param string $message Warning message to be shown
+     * @param string $key     Message Key
+     * @param string $style   The functional style of the notice
      */
-    private function printMessage( $message, $key ) {
-        $nonce = wp_create_nonce( "metaslider-dismiss-{$key}" );
-        echo "<div id='message' class='updated'><p><b>Warning:</b> {$message}<br /><br /><a class='button' href='?page=metaslider&dismissMessage={$key}&_wpnonce={$nonce}'>Hide</a></p></div>";
+    private function printMessage($message, $key, $style = 'dismissable') {
+		$nonce = wp_create_nonce("metaslider-dismiss-{$key}");
+		$message = sprintf('<strong>%s</strong> ', __('Warning:', 'ml-slider')) . $message;
+		echo "<div id='message' class='updraft-ad-container notice updated metaslider-admin-notice'>
+			<p class='m-0 p-2'>{$message}</p>";
+		if ('dismissable' === $style) {
+			echo "<div class='updraft-advert-dismiss'>
+                <a class='underline text-blue-dark'  href='?page=metaslider&dismissMessage={$key}&_wpnonce={$nonce}'>Dismiss</a>
+			</div>";
+		}
+		echo "</div>";
     }
 }

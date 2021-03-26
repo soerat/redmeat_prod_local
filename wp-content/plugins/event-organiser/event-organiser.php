@@ -2,8 +2,8 @@
 /*
 Plugin Name: Event Organiser
 Plugin URI: http://www.wp-event-organiser.com
-Version: 2.3.2
-Description: Creates a custom post type 'events' with features such as reoccurring events, venues, Google Maps, calendar views and events and venue pages
+Version: 3.10.5
+Description: Creates a custom post type 'events' with features such as recurring events, venues, Google Maps, calendar views and events and venue pages
 Author: Stephen Harris
 Author URI: http://www.stephenharris.info
 Network: false
@@ -27,7 +27,7 @@ Domain Path: /languages
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 /*  Cookies used:
-         eo_admin_cal_last_viewed_date   -   stores the last viewed date on the admin calendar. 
+         eo_admin_cal_last_viewed_date   -   stores the last viewed date on the admin calendar.
          eo_admin_cal_last_view   -   stores the last used admin calendar view (month, week, day).
          Expires: 10 minutes. Used for persitant admin calendar
 */
@@ -37,19 +37,24 @@ Domain Path: /languages
 
 /**
  * Set the plug-in database version
- */ 
-define( 'EVENT_ORGANISER_VER', '2.3.2' );
-
+ */
+define( 'EVENT_ORGANISER_VER', '3.10.5' );
 
 add_action( 'after_setup_theme', '_eventorganiser_set_constants' );
-function _eventorganiser_set_constants(){
+function _eventorganiser_set_constants() {
 	/*
  	* Defines the plug-in directory url
  	* <code>url:http://mysite.com/wp-content/plugins/event-organiser</code>
 	*/
-	define( 'EVENT_ORGANISER_URL', plugin_dir_url( __FILE__ ) );
-	
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-add-ons.php');
+	if ( ! defined( 'EVENT_ORGANISER_URL' ) ) {
+		define( 'EVENT_ORGANISER_URL', plugin_dir_url( __FILE__ ) );
+	}
+
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-add-ons.php' );
+
+	if ( ! defined( 'EVENT_ORGANISER_BETA_FEATURES' ) ) {
+		define( 'EVENT_ORGANISER_BETA_FEATURES', false );
+	}
 }
 
 /*
@@ -61,7 +66,7 @@ define( 'EVENT_ORGANISER_DIR', plugin_dir_path( __FILE__ ) );
 /**
  * For use in datetime formats. To return a datetime object rather than formatted string
  */
-define( 'DATETIMEOBJ', 'DATETIMEOBJ', true );
+define( 'DATETIMEOBJ', 'DATETIMEOBJ' );
 
 
 /**
@@ -79,158 +84,174 @@ define( 'DATETIMEOBJ', 'DATETIMEOBJ', true );
  */
 function eventorganiser_load_textdomain() {
 	$domain = 'eventorganiser';
+
+	/**
+	 *@ignore
+	 */
 	$locale = apply_filters( 'plugin_locale', get_locale(), $domain );
-		
+
 	$mofile = $domain . '-' . $locale . '.mo';
 
 	/* Check the global language folder */
 	$files = array( WP_LANG_DIR . '/event-organiser/' . $mofile, WP_LANG_DIR . '/' . $mofile );
-	foreach ( $files as $file ){
-		if( file_exists( $file ) )
+	foreach ( $files as $file ) {
+		if ( file_exists( $file ) ) {
 			return load_textdomain( $domain, $file );
+		}
 	}
 
 	//If we got this far, fallback to the plug-in language folder.
 	//We could use load_textdomain - but this avoids touching any more constants.
-	load_plugin_textdomain( 'eventorganiser', false, basename( dirname( __FILE__ ) ).'/languages' );
+	load_plugin_textdomain( 'eventorganiser', false, basename( dirname( __FILE__ ) ) . '/languages' );
 }
 add_action( 'plugins_loaded', 'eventorganiser_load_textdomain' );
 
+/**
+ * Initiates the EO_Admin_Notice_Handler singleton
+ *
+ * @since 3.0.3
+ * @ignore
+ */
+function eventorganiser_init_notice_handler() {
+	$notice_handler = EO_Admin_Notice_Handler::get_instance();
+}
+add_action( 'plugins_loaded', 'eventorganiser_init_notice_handler' );
+
 global $eventorganiser_roles;
 $eventorganiser_roles = array(
-		 'edit_events' => __( 'Edit Events', 'eventorganiser' ),
-		 'publish_events' => __( 'Publish Events', 'eventorganiser' ),
-		 'delete_events' => __( 'Delete Events', 'eventorganiser' ),
-		'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
-		 'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
-		'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
-		 'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
-		 'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
+	'edit_events' => __( 'Edit Events', 'eventorganiser' ),
+	'publish_events' => __( 'Publish Events', 'eventorganiser' ),
+	'delete_events' => __( 'Delete Events', 'eventorganiser' ),
+	'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
+	'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
+	'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
+	'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
+	'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
 );
-			
+
 /****** Install, activation & deactivation******/
 require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-install.php' );
 
-register_activation_hook( __FILE__, 'eventorganiser_install' ); 
-register_deactivation_hook(  __FILE__, 'eventorganiser_deactivate' );
+register_activation_hook( __FILE__, 'eventorganiser_install' );
+register_deactivation_hook( __FILE__, 'eventorganiser_deactivate' );
 register_uninstall_hook( __FILE__, 'eventorganiser_uninstall' );
 
 
-function eventorganiser_get_option( $option = false, $default = false ){
+function eventorganiser_get_option( $option = false, $default = false ) {
 
-      $defaults = array(
+	$defaults = array(
 		'url_event' => 'events/event',
 		'url_events' => 'events/event',
 		'url_venue' => 'events/venue',
 		'url_cat' => 'events/category',
 		'url_tag' => 'events/tag',
+		'url_on' => 'on',
 		'navtitle' => __( 'Events', 'eventorganiser' ),
 		'group_events' => '',
 		'feed' => 1,
 		'deleteexpired' => 0,
-		'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields', 'comments', 'eventtag' ),
+		'supports' => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields', 'eventtag', 'event-venue' ),
 		'event_redirect' => 'events',
 		'dateformat' => 'd-m-Y',
 		'prettyurl' => 1,
-		'templates' => 1,
+		'templates' => 'themecompat',
 		'addtomenu' => 0,
 		'menu_item_db_id' => 0,
 		'excludefromsearch' => 0,
 		'showpast' => 0,
 		'runningisnotpast' => 0,
-      	'hide_addon_page' => 0,
-      	'disable_css' => 0,
-      );
-      $options = get_option( 'eventorganiser_options', $defaults );
-      $options = wp_parse_args( $options, $defaults );
-      
-	if( false === $option )
+		'hide_addon_page' => 0,
+		'disable_css' => 0,
+		'google_api_key' => false,
+		'map_provider' => 'openstreetmap'
+	);
+	$options = get_option( 'eventorganiser_options', $defaults );
+	$options = wp_parse_args( $options, $defaults );
+
+	$options['supports'][] = 'event-venue';
+
+	$options = apply_filters( 'eventorganiser_options', $options );
+
+	if ( false === $option ) {
 		return $options;
+	}
 
 	/* Backwards compatibility for 'eventag' option */
-	if( $option === 'eventtag' )
+	if ( 'eventtag' === $option ) {
 		return in_array( 'eventtag', $options['supports'] );
-	
-	if( $option === 'dateformat' ){
+	}
+
+	if ( 'dateformat' === $option ) {
 		//Backwards compatibility (migration from mm-dd/dd-mm to php format):
-		if( $options[$option] == 'mm-dd' ){
+		if ( 'mm-dd' == $options[$option] ) {
 			$options[$option] = 'm-d-Y';
-		}elseif( $options[$option] == 'dd-mm' ){
+		} elseif ( 'dd-mm' == $options[$option] ) {
 			$options[$option] = 'd-m-Y';
 		}
 	}
 
-     if( !isset($options[$option]) )
-          return $default;
+	if ( ! isset( $options[$option] ) ) {
+		return $default;
+	}
 
 	return $options[$option];
 }
 
 
 /****** Register event post type and event taxonomy******/
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-cpt.php');
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-cpt.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/class-eo-walker-taxonomydropdown.php' );
 
 /****** Register scripts, styles and actions******/
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-register.php');
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-register.php' );
 
 /****** Deals with the queries******/
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-archives.php');
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-archives.php' );
 
 /****** Deals with importing/exporting & subscriptions******/
-require_once(EVENT_ORGANISER_DIR.'includes/class-event-organiser-im-export.php');
-require_once(EVENT_ORGANISER_DIR.'includes/class-eo-ical-parser.php');
+require_once( EVENT_ORGANISER_DIR . 'includes/class-event-organiser-im-export.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/class-eo-ical-parser.php' );
 
-if ( is_admin() ):
-	require_once(EVENT_ORGANISER_DIR.'classes/class-eventorganiser-admin-page.php');
+if ( is_admin() ) :
+	require_once( EVENT_ORGANISER_DIR . 'classes/class-eventorganiser-admin-page.php' );
 
 	/****** event editing pages******/
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-edit.php');
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-manage.php');
-        	
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-edit.php' );
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-manage.php' );
+
 	/****** settings, venue and calendar pages******/
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-settings.php');
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-venues.php');
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-calendar.php');
-	
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-debug.php');
-	
-	require_once(EVENT_ORGANISER_DIR.'event-organiser-go-pro.php');
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-settings.php' );
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-venues.php' );
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-calendar.php' );
+
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-debug.php' );
+
+	require_once( EVENT_ORGANISER_DIR . 'event-organiser-go-pro.php' );
 
 endif;
 
 if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-    /****** Ajax actions ******/
-    require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-ajax.php');
-}
-
-if( defined( 'WP_DEBUG' ) && WP_DEBUG ){
-	add_action( 'register_sidebar', '_eventorganiser_check_sidebars' );
+	/****** Ajax actions ******/
+	require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-ajax.php' );
 }
 
 /****** Functions ******/
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-event-functions.php');
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-venue-functions.php');
-require_once(EVENT_ORGANISER_DIR.'includes/event-organiser-utility-functions.php');
-require_once(EVENT_ORGANISER_DIR.'includes/deprecated.php');
-require_once(EVENT_ORGANISER_DIR.'includes/event.php');
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-event-functions.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-venue-functions.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-utility-functions.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/class-eo-admin-notice.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/deprecated.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/event.php' );
+require_once( EVENT_ORGANISER_DIR . 'includes/class-eo-extension.php' );
 
 /****** Templates - note some plug-ins will require this to included admin-side too ******/
-require_once('includes/event-organiser-templates.php');
+require_once( 'includes/event-organiser-templates.php' );
+require_once( 'includes/class-eo-theme-compatability.php' );
 
 /****** Widgets and Shortcodes ******/
-require_once(EVENT_ORGANISER_DIR.'classes/class-eo-agenda-widget.php');
-require_once(EVENT_ORGANISER_DIR.'classes/class-eo-event-list-widget.php');
-require_once(EVENT_ORGANISER_DIR.'classes/class-eo-calendar-widget.php');
-require_once(EVENT_ORGANISER_DIR.'classes/class-eo-widget-categories.php');
-require_once(EVENT_ORGANISER_DIR.'classes/class-eo-widget-venues.php');
-require_once(EVENT_ORGANISER_DIR.'classes/class-eventorganiser-shortcodes.php');
-
-add_action( 'widgets_init', 'eventorganiser_widgets_init' );
-function eventorganiser_widgets_init(){
-	eventorganiser_load_textdomain();
-	register_widget( 'EO_Event_List_Widget' );
-	register_widget( 'EO_Events_Agenda_Widget' );
-	register_widget( 'EO_Calendar_Widget' );
-	register_widget( 'EO_Widget_Categories' );
-	register_widget( 'EO_Widget_Venues' );
-}
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eo-agenda-widget.php' );
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eo-event-list-widget.php' );
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eo-calendar-widget.php' );
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eo-widget-categories.php' );
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eo-widget-venues.php' );
+require_once( EVENT_ORGANISER_DIR . 'classes/class-eventorganiser-shortcodes.php' );
